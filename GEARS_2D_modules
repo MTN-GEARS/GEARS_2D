@@ -1,0 +1,90 @@
+
+import math
+
+# The purpose of this example is to make "modules" so that you don't have
+# to rewrite code (SPAL!).
+
+def conc2d(x0,y0,c1,xvar,yvar):
+  cvar = c1*((x0-xvar)**2+(y0-yvar)**2)
+  return cvar
+  
+def quad_eq_p(a,b,c):
+  outp = (-b + math.sqrt(b**2-4*a*c))/(2*a)
+  return outp
+
+def quad_eq_m(a,b,c):
+  outm = (-b - math.sqrt(b**2-4*a*c))/(2*a)
+  return outm
+  
+def conc(xop,xvar,cvar):
+  co = cvar*(xop-xvar)**2
+  return co
+  
+# Now what if we do it in 2 dimensions?  The pattern is the same.  The algebra
+# is not really more complicated, just more tricky to remember all the terms!
+
+# Define initial variables
+
+x1 = 0.0
+y1=0.0
+c1=10.0
+x2=3.0
+y2=3.0
+c2=25.0
+x3=4.0
+y3=0.0
+c3=5.556
+
+# Define intermediate variables (SPAL!)
+a = c1-c2
+b=-2*x1*c1+2*x2*c2
+c=-2*y1*c1+2*y2*c2
+d=c1*(x1**2+y1**2)-c2*(x2**2+y2**2)
+e=c1-c3
+f=-2*x1*c1+2*x3*c3
+g=-2*y1*c1+2*y3*c3
+h = c1*(x1**2+y1**2)-c3*(x3**2+y3**2)
+i = c*e-a*g
+j = a*h-e*d
+k=e*b-a*f
+l=a*i**2+a*k**2
+m = -2*a*j*i-i*b*k+c*k**2
+n = a*j**2+b*j*k+d*k**2
+
+# since you can't take a sqrt of a negative number, check to see
+# if value of the sqrt is less than 0.  If not, find the solution.
+
+if (m**2-4*l*n < 0):
+    print('Sorry no solution')
+else:
+    yop =  quad_eq_p(l,m,n)
+    yom =  quad_eq_m(l,m,n)
+
+    xop = (-yop*(e*c-a*g)-d*e+a*h)/(e*b-a*f)
+    xom = (-yom*(e*c-a*g)-d*e+a*h)/(e*b-a*f)
+      
+    cop=conc2d(xop,yop,c1,x1,y1)
+    com = conc2d(xom,yom,c1,x1,y1)
+    
+    # Print problem and solution
+
+    print 'Given: x1 =', x1,', y1 =', y1,', c1 =',c1
+    print '       x2 =', x2,', y2 =', y2,', c2 =', c2
+    print '       x3 =', x3,', y3 =', y3,', c3 =', c3
+    print 'Find : xo and co'
+    print
+   
+    print('Solution 1:')
+    print ('Xo = ',xop)
+    print ('Yo = ',yop)
+    print ('Co = ',cop)
+    
+    print('Solution 2:')
+    print ('Xo = ',xom)
+    print ('Yo = ',yom)
+    print ('Co = ',com)
+    print
+    print '*****************************************'
+
+
+   
