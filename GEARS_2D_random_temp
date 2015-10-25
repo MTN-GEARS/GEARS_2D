@@ -1,0 +1,80 @@
+def distance(p0, p1):
+    return np.sqrt((p0)**2 + (p1**2))
+    
+def define_source(maxsensors,maxconc,maxx,maxy):
+    source_conc=np.random.uniform(0,maxconc)
+    source_loc_x=np.random.uniform(0,maxx)
+    source_loc_y=np.random.uniform(0,maxy)
+    sensor_loc_x = np.random.uniform(0,maxx,maxsensors)
+    sensor_loc_y = np.random.uniform(0,maxx,maxsensors)
+    txrange=(source_loc_x-sensor_loc_x)
+    tyrange=(source_loc_y-sensor_loc_y)
+    trange=distance(txrange,tyrange)
+    sensor_conc = source_conc/trange**2
+    error = (np.random.normal(0,1,maxsensors))*0.01*sensor_conc
+    sensor_conc = sensor_conc
+
+    return source_conc,source_loc_x,source_loc_y,sensor_conc,sensor_loc_x,sensor_loc_y
+
+def quad_eq(a,b,c):
+    outp = (-b + np.sqrt(b**2-4*a*c))/(2*a)
+    outm = (-b - np.sqrt(b**2-4*a*c))/(2*a)
+  
+    return outp, outm
+  
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+maxsensors=6
+maxconc=100
+maxx = 10
+maxy = 10
+plt.ion()
+plt.show()
+#a=[[None]*maxsensors]
+
+#b=a; c=a;d=a;e=a;f=a;g=a;h=a;i=a;j=a;k=a;l=a;m=a;n=a
+
+source_conc,source_loc_x,source_loc_y,conc,x,y = define_source(maxsensors,maxconc,maxx,maxy)
+
+print("Source Location: ",source_loc_x,source_loc_y)
+print(" Source Concentration: ",source_conc)
+print(maxsensors,maxsensors/3)
+print(conc)
+it=0
+print('inside',conc[it],conc[it+1],conc[it+2])
+a = conc[it]-conc[it+1]
+b=-2*x[it]*conc[it]+2*x[it+1]*conc[it+2]
+c=-2*y[it]*conc[it]+2*y[it+1]*conc[it+1]
+d=conc[it]*(x[it]**2+y[it]**2)-conc[it+1]*(x[it+1]**2+y[it+2]**2)
+e=conc[it]-conc[it+2]
+f=-2*x[it]*conc[it]+2*x[it+2]*conc[it+2]
+g=-2*y[it]*conc[it]+2*y[it+2]*conc[it+2]
+h = conc[it]*(x[it]**2+y[it]**2)-conc[it+2]*(x[it+2]**2+y[it+2]**2)
+i = c*e-a*g
+j = a*h-e*d
+k=e*b-a*f
+l=a*i**2+a*k**2
+m = -2*a*j*i-i*b*k+c*k**2
+n = a*j**2+b*j*k+d*k**2
+
+print('param',l,m,n)
+if (m**2-4*l*n < 0):
+    print('Sorry no solution')
+else:
+    outp,outm = quad_eq(l,m,n)
+    print(outp,outm)
+    
+#    print('Sensor Location: ',sensor_loc[1], sensor_loc[2],sensor_loc[3])
+
+#print(sensor_loc,sensor_conc,outp,outm)
+
+#plt.scatter(source_loc,0,source_conc,color='red')
+#for i in range(1,6):
+    
+#    plt.scatter(sensor_loc[it],0,sensor_conc[it],color='blue')
+
+
+    
+
