@@ -1,0 +1,27 @@
+# This subroutine is to define an intial source concentration (with the maximum concentration=maxconc) and initial
+# source location (from 0 to maxx).  It then creates random locations for maxsensors number of sensors and calculates the
+# concentration based on 1/r^2.  It then calculates an error with a "normal" distribution and adds the error to the concentration.
+
+def define_source(maxsensors,maxconc,maxx):
+    source_conc=np.random.uniform(0,maxconc)
+    source_loc=np.random.uniform(0,maxx)
+    sensor_loc = np.random.uniform(0,maxx,maxsensors)
+    sensor_conc = source_conc/(source_loc-sensor_loc)**2
+    error = np.random.normal(0,1,maxsensors)
+    sensor_conc = sensor_conc + error
+    
+    return source_conc,source_loc,sensor_loc,sensor_conc
+
+import numpy as np
+import matplotlib.pyplot as plt
+plt.ion()
+plt.show()
+source_conc,source_loc,sensor_loc,sensor_conc = define_source(6,100,6)
+
+plt.scatter(source_loc,0,source_conc,color='red')
+for i in range(1,6):
+    
+    plt.scatter(sensor_loc[i],0,sensor_conc[i],color='blue')
+
+
+    
