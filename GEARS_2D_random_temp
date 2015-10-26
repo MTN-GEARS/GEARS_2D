@@ -1,6 +1,10 @@
 def distance(p0, p1):
     return np.sqrt((p0)**2 + (p1**2))
-    
+
+def conc2d(x0,y0,c1,xvar,yvar):
+  cvar = c1*((x0-xvar)**2+(y0-yvar)**2)
+  return cvar
+  
 def define_source(maxsensors,maxconc,maxx,maxy):
     source_conc=np.random.uniform(0,maxconc)
     source_loc_x=np.random.uniform(0,maxx)
@@ -25,55 +29,111 @@ def quad_eq(a,b,c):
 
 import numpy as np
 import matplotlib.pyplot as plt
+import sys
 
-maxsensors=6
+maxsensors=6  # Must be a multiple of 3
+if 6%3 != 0:
+    print('Maxsensors must be a multiple of 3')
+    sys.exit()
+ncount = maxsensors/3
+
+source_loc_calc_x_1=np.zeros(ncount)
+source_loc_calc_x_2=np.zeros(ncount)
+source_loc_calc_y_1=np.zeros(ncount)
+source_loc_calc_y_2=np.zeros(ncount)
+source_loc_calc_x=np.zeros(ncount)
+source_loc_calc_y=np.zeros(ncount)
+source_conc_calc=np.zeros(ncount)
+source_conc_calc_1=np.zeros(ncount)
+source_conc_calc_2=np.zeros(ncount)
+
 maxconc=100
 maxx = 10
 maxy = 10
 plt.ion()
 plt.show()
+
 #a=[[None]*maxsensors]
 
 #b=a; c=a;d=a;e=a;f=a;g=a;h=a;i=a;j=a;k=a;l=a;m=a;n=a
 
 source_conc,source_loc_x,source_loc_y,conc,x,y = define_source(maxsensors,maxconc,maxx,maxy)
 
-print("Source Location: ",source_loc_x,source_loc_y)
-print(" Source Concentration: ",source_conc)
-print(maxsensors,maxsensors/3)
-print(conc)
-it=0
-print('inside',conc[it],conc[it+1],conc[it+2])
-a = conc[it]-conc[it+1]
-b=-2*x[it]*conc[it]+2*x[it+1]*conc[it+2]
-c=-2*y[it]*conc[it]+2*y[it+1]*conc[it+1]
-d=conc[it]*(x[it]**2+y[it]**2)-conc[it+1]*(x[it+1]**2+y[it+2]**2)
-e=conc[it]-conc[it+2]
-f=-2*x[it]*conc[it]+2*x[it+2]*conc[it+2]
-g=-2*y[it]*conc[it]+2*y[it+2]*conc[it+2]
-h = conc[it]*(x[it]**2+y[it]**2)-conc[it+2]*(x[it+2]**2+y[it+2]**2)
-i = c*e-a*g
-j = a*h-e*d
-k=e*b-a*f
-l=a*i**2+a*k**2
-m = -2*a*j*i-i*b*k+c*k**2
-n = a*j**2+b*j*k+d*k**2
-
-print('param',l,m,n)
-if (m**2-4*l*n < 0):
-    print('Sorry no solution')
-else:
-    outp,outm = quad_eq(l,m,n)
-    print(outp,outm)
+print("Source Location, Conc: ",source_loc_x,source_loc_y,source_conc)
+print
+for it in range(0,maxsensors):
+    print('Sensor Location, Conc: ',it+1,x[it], y[it],conc[it])
     
-#    print('Sensor Location: ',sensor_loc[1], sensor_loc[2],sensor_loc[3])
+print
+ncount=0
+for it in range(0,maxsensors,3):
+    print('Set of sensors',it+1,it+2,it+3)
+    a = conc[it]-conc[it+1]
+    b=-2*x[it]*conc[it]+2*x[it+1]*conc[it+1]
+    c=-2*y[it]*conc[it]+2*y[it+1]*conc[it+1]
+    d=conc[it]*(x[it]**2+y[it]**2)-conc[it+1]*(x[it+1]**2+y[it+1]**2)
+    e=conc[it]-conc[it+2]
+    f=-2*x[it]*conc[it]+2*x[it+2]*conc[it+2]
+    g=-2*y[it]*conc[it]+2*y[it+2]*conc[it+2]
+    h = conc[it]*(x[it]**2+y[it]**2)-conc[it+2]*(x[it+2]**2+y[it+2]**2)
+    i = c*e-a*g
+    j = a*h-e*d
+    k=e*b-a*f
+    l=a*i**2+a*k**2
+    m = -2*a*j*i-i*b*k+c*k**2
+    n = a*j**2+b*j*k+d*k**2
 
-#print(sensor_loc,sensor_conc,outp,outm)
+    if (m**2-4*l*n < 0):
+        print('Sorry no solution')
+    else:
+        yop,yom = quad_eq(l,m,n)
+    
+        xop = (-yop*(e*c-a*g)-d*e+a*h)/(e*b-a*f)
+        xom = (-yom*(e*c-a*g)-d*e+a*h)/(e*b-a*f)
+    
+        cop=conc2d(xop,yop,conc[1],x[1],y[1])
+        com = conc2d(xom,yom,conc[1],x[1],y[1])
 
-#plt.scatter(source_loc,0,source_conc,color='red')
+        presult=True
+        mresult=True
+        if (xop < 0 or xop > maxx or yop<0 or yop > maxy):
+            presult=False
+        if (xom < 0 or xom > maxx or yom<0 or yop > maxy):
+            mresult=False
+    
+        if presult and not mresult:
+            source_loc_calc_x[ncount]=xop
+            source_loc_calc_y[ncount]=yop
+            source_conc_calc[ncount]=cop
+            print('Source Location, Conc: ', xop, yop,cop)
+        if mresult and not presult:
+            source_loc_calc_x[ncount]=xom
+            source_loc_calc_y[ncount]=yom
+            source_conc_calc[ncount]=com
+            print('Source Location, Conc: ', xom, yom,com)
+        if presult and mresult:
+            mult_result=True
+            source_loc_calc_x_1[ncount]=xop
+            source_loc_calc_y_1[ncount]=yop
+            source_conc_calc_1[ncount]=cop
+            source_loc_calc_x_2[ncount]=xom
+            source_loc_calc_y_2[ncount]=yom
+            source_conc_calc_2[ncount]=com
+            print('Source Location, Conc: ', xop, yop,cop)
+            print ('or')
+            print('Source Location, Conc: ', xom, yom,com)
+        print
+        ncount=ncount+1
+#print(source_loc_calc_y,source_loc_calc_x)
+#plt.scatter(source_loc_x,source,source_conc,color='red')
 #for i in range(1,6):
     
 #    plt.scatter(sensor_loc[it],0,sensor_conc[it],color='blue')
+
+
+    
+
+
 
 
     
