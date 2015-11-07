@@ -20,6 +20,8 @@ def defconc(minconc,maxconc,minloc,maxloc,numsens):
         sensor_locy[it] = np.random.uniform(minloc,maxloc)
            
     sensor_conc = source_conc/((source_locx-sensor_locx)**2+(source_locy-sensor_locy)**2)
+    error = (np.random.normal(0,1,numsens))*0.1*sensor_conc
+    sensor_conc = sensor_conc+error
     return source_conc,source_locx, source_locy, sensor_conc, sensor_locx,sensor_locy
     
 def find_conc(xop,yop,xvar,yvar,cvar):
