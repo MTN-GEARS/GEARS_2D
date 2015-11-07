@@ -1,0 +1,99 @@
+import numpy as np
+import math
+import matplotlib.pyplot as plt
+
+def defconc(minconc,maxconc,minloc,maxloc,numsens):
+    source_locx=0
+    source_locy=0
+    source_conc = np.random.uniform(minconc,maxconc)
+    while ((source_locx < 3) or (source_locx > 4)) and ((source_locy < 3) or (source_locy > 4)):
+      source_locx=np.random.uniform(minloc,maxloc)
+      source_locy=np.random.uniform(minloc,maxloc)
+    sensor_locx=np.zeros(numsens)
+    sensor_locy=np.zeros(numsens)
+    for it in range(0,numsens):
+        sensor_locx[it]=0
+        sensor_locy[it]=0
+#        while (sensor_locx[it] < 3) or (sensor_locx[it] > 4):
+        sensor_locx[it] = np.random.uniform(minloc,maxloc)
+#        while (sensor_locy[it] < 3) or (sensor_locy[it] > 4):
+        sensor_locy[it] = np.random.uniform(minloc,maxloc)
+           
+    sensor_conc = source_conc/((source_locx-sensor_locx)**2+(source_locy-sensor_locy)**2)
+    return source_conc,source_locx, source_locy, sensor_conc, sensor_locx,sensor_locy
+    
+def find_conc(xop,yop,xvar,yvar,cvar):
+  co = cvar*((xop-xvar)**2+(yop-yvar)**2)
+  return co
+  
+def montypython (A,B,C):
+    x01=(-B+math.sqrt(B**2-4*A*C))/(2*A)
+    x02=(-B-math.sqrt(B**2-4*A*C))/(2*A)
+    return x01,x02
+    
+def findx0(A,B,C,D,E,F):
+    x0c=(-D*C+A*F)/(D*B-A*E)
+    
+    return x0c
+
+plt.clf()
+c0,x0,y0,sens_conc,sens_locx, sens_locy = defconc(1,100,0,7,3)
+
+print('******************************************')
+print('Assumed Source Location: '+str(x0)+' , '+str(y0))
+print('Assumed Source Concentration: '+str(c0))
+print('--------------------------------------------------------')
+#for ise in range(0,3):
+#    print('Sensor '+str(ise+1))
+#    print('Location '+ str(sens_locx[ise])+' , '+ str(sens_locy[ise])+ ' Concentration = '+str(sens_conc[ise]))
+#    print('--------------------------------------------------------')
+
+A= sens_conc[0]-sens_conc[1]
+B= -2*sens_locx[0]*sens_conc[0]+2*sens_locx[1]*sens_conc[1]
+C= -2*sens_locy[0]*sens_conc[0]+2*sens_locy[1]*sens_conc[1]
+D= sens_conc[0]*(sens_locx[0]**2+sens_locy[0]**2)-sens_conc[1]*(sens_locx[1]**2+sens_locy[1]**2)
+E= sens_conc[0]-sens_conc[2]
+F=-2*sens_locx[0]*sens_conc[0]+2*sens_locx[2]*sens_conc[2]
+G=-2*sens_locy[0]*sens_conc[0]+2*sens_locy[2]*sens_conc[2]
+H=sens_conc[0]*(sens_locx[0]**2+sens_locy[0]**2)-sens_conc[2]*(sens_locx[2]**2+sens_locy[2]**2)
+I=C*E-A*G
+J=A*H-E*D
+K=E*B-A*F
+L=A*I**2+A*K**2
+M=-2*A*J*I-I*B*K+C*K**2
+N=A*J**2+B*J*K+D*K**2
+
+if (M**2-4*L*N < 0):
+    print('Sorry no solution')
+else:
+  y01c,y02c=montypython(L,M,N) 
+  
+  x01c = (-y01c*(E*C-A*G)-D*E+A*H)/(E*B-A*F)
+  x02c = (-y02c*(E*C-A*G)-D*E+A*H)/(E*B-A*F)
+ 
+  c01c = find_conc(x01c,y01c,sens_locx[0],sens_locy[0],sens_conc[0])
+  c02c = find_conc(x02c,y02c,sens_locx[0],sens_locy[0],sens_conc[0])
+ 
+  print('******************************************')
+  print('Calculated Source Location: '+str(x01c)+' , '+str(y01c))
+  print('Calculated Source Concentration: '+str(c01c))
+  print('--------------------------------------------------------') 
+  print('or')
+  print('Calculated Source Location: '+str(x02c)+' , '+str(y02c))
+  print('Calculated Source Concentration: '+str(c02c))
+  print('--------------------------------------------------------') 
+
+plt.xlim((0,7))
+plt.ylim((0,7))
+
+plt.scatter(x0,y0,4*c0,color='red')
+for it in range(0,3):
+    plt.scatter(sens_locx[it],sens_locy[it],4*sens_conc[it],color='blue')
+    
+plt.scatter(x01c,y01c,4*c01c,color='green',marker='*')
+plt.scatter(x02c,y02c,4*c02c,color='green',marker='*')
+
+plt.axvspan(0, 7, color='g', alpha=0.5, lw=0)
+plt.axvspan(3, 4,color='grey', alpha=0.5, lw=0)
+plt.axhspan(3, 4,color='grey', alpha=0.5, lw=0)
+plt.show()
