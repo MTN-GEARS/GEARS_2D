@@ -11,13 +11,17 @@ def defconc(minconc,maxconc,minloc,maxloc,numsens):
       source_locy=np.random.uniform(minloc,maxloc)
     sensor_locx=np.zeros(numsens)
     sensor_locy=np.zeros(numsens)
-    for it in range(0,numsens):
-        sensor_locx[it]=0
-        sensor_locy[it]=0
+#    for it in range(0,numsens):
+    sensor_locx[0]=0
+    sensor_locy[0]=0
+    sensor_locx[1]=7
+    sensor_locy[1]=7
+    sensor_locx[2]=0
+    sensor_locy[2]=7
 #        while (sensor_locx[it] < 3) or (sensor_locx[it] > 4):
-        sensor_locx[it] = np.random.uniform(minloc,maxloc)
+#       sensor_locx[it] = np.random.uniform(minloc,maxloc)
 #        while (sensor_locy[it] < 3) or (sensor_locy[it] > 4):
-        sensor_locy[it] = np.random.uniform(minloc,maxloc)
+#        sensor_locy[it] = np.random.uniform(minloc,maxloc)
            
     sensor_conc = source_conc/((source_locx-sensor_locx)**2+(source_locy-sensor_locy)**2)
     error = (np.random.normal(0,1,numsens))*0.1*sensor_conc
@@ -90,7 +94,7 @@ plt.ylim((0,7))
 
 plt.scatter(x0,y0,4*c0,color='red')
 for it in range(0,3):
-    plt.scatter(sens_locx[it],sens_locy[it],4*sens_conc[it],color='blue')
+    plt.scatter(sens_locx[it],sens_locy[it],s=500,color='blue')
     
 plt.scatter(x01c,y01c,4*c01c,color='green',marker='*')
 plt.scatter(x02c,y02c,4*c02c,color='green',marker='*')
