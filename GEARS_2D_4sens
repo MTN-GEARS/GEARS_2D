@@ -2,66 +2,67 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 
-def sens_loc_corner(min_loc,max_loc,num_sens_corner):
+def sens_loc_corner(min_loc,max_loc,num):
 
     if num_sens_corner == 1:
-        sensor_locxc[0]=min_loc
-        sensor_locyc[0]=min_loc
+        sensor_locx[0]=min_loc
+        sensor_locy[0]=min_loc
     if num_sens_corner == 2:
-        sensor_locxc[0]=min_loc
-        sensor_locyc[0]=min_loc
-        sensor_locxc[1]=max_loc
-        sensor_locyc[1]=max_loc
+        sensor_locx[0]=min_loc
+        sensor_locy[0]=min_loc
+        sensor_locx[1]=max_loc
+        sensor_locy[1]=max_loc
     if num_sens_corner == 3:
-        sensor_locxc[0]=min_loc
-        sensor_locyc[0]=min_loc
-        sensor_locxc[1]=max_loc
-        sensor_locyc[1]=max_loc
-        sensor_locxc[2]=min_loc
-        sensor_locyc[2]=max_loc
+        sensor_locx[0]=min_loc
+        sensor_locy[0]=min_loc
+        sensor_locx[1]=max_loc
+        sensor_locy[1]=max_loc
+        sensor_locx[2]=min_loc
+        sensor_locy[2]=max_loc
     if num_sens_corner == 4:
-        sensor_locxc[0]=min_loc
-        sensor_locyc[0]=min_loc
-        sensor_locxc[1]=max_loc
-        sensor_locyc[1]=max_loc
-        sensor_locxc[2]=min_loc
-        sensor_locyc[2]=max_loc
+        sensor_locx[0]=min_loc
+        sensor_locy[0]=min_loc
+        sensor_locx[1]=max_loc
+        sensor_locy[1]=max_loc
+        sensor_locx[2]=min_loc
+        sensor_locy[2]=max_loc
         sensor_locx[3]=max_loc*0.99
         sensor_locy[3]=min_loc*0.99
 
-    return sensor_locxc,sensor_locyc
+    return sensor_locx,sensor_locy
     
-def sens_loc_bus(min_loc,max_loc,num_sens_bus):   
+def sens_loc_bus(min_loc,max_loc,num_s,num_e):   
+    for it in range(num_s,num_e):
+
+        if sensor_locx[it] >= 3.0 and sensor_locx[it] <=4.0:
+            sensor_locy[it]=(np.random.uniform(min_loc,max_loc))
+        else:
+            sensor_locy[it] = (np.random.uniform(3,4))
+
+    return sensor_locx,sensor_locy
     
-    for it in range(0,num_sens_bus):
-        while (sensor_locxb[it] < 3) or (sensor_locxb[it] > 4):
-            sensor_locxb[it] = np.random.uniform(min_loc,max_loc)
-        while (sensor_locyb[it] < 3) or (sensor_locyb[it] > 4):
-            sensor_locyb[it] = np.random.uniform(min_loc,max_loc)
+def sens_loc_drones(min_loc,max_loc,num_s,num_e):   
     
-    return sensor_locxb,sensor_locyb
+    for it in range(num_s,num_e):
+        sensor_locx[it] = np.random.uniform(min_loc,max_loc)
+        sensor_locy[it] = np.random.uniform(min_loc,max_loc)
     
-def sens_loc_drones(min_loc,max_loc,num_sens_drones):   
-    
-    for it in range(0,num_sens_drones):
-        sensor_locxd[it] = np.random.uniform(min_loc,max_loc)
-        sensor_locyd[it] = np.random.uniform(min_loc,max_loc)
-    
-    return sensor_locxd,sensor_locyd
+    return sensor_locx,sensor_locy
     
 def defconc(minconc,maxconc,minloc,maxloc,sensor_locx,sensor_locy,per_error):
-    source_locx=np.float64(0.0)
-    source_locy=np.float64(0.0)
+
+#    source_locx=np.float64(2.0)
+#    source_locy=np.float64(2.0)
     source_conc = np.float64(100.0) #np.random.uniform(minconc,maxconc)
-    while ((source_locx <= 3.0) or (source_locx >= 4.0)) and ((source_locy <= 3.0) or (source_locy >= 4.0)):
-      source_locx=np.float64(np.random.uniform(minloc,maxloc))
-      source_locy=np.float64(np.random.uniform(minloc,maxloc))
-  
+
+    source_locx=np.float64(np.random.uniform(minloc+1,maxloc-1))
+    source_locy=np.float64(np.random.uniform(minloc+1,maxloc-1))
+
     sensor_conc = source_conc/((source_locx-sensor_locx)**2+(source_locy-sensor_locy)**2)
     
-    error = ((np.random.normal(0,1,sens_locx.shape))*2-1)*per_error*sensor_conc
+    error = ((np.random.normal(0,1,sensor_locx.size))*2-1)*per_error*sensor_conc
     sensor_conc = sensor_conc+error
-    
+
     return source_conc,source_locx, source_locy, sensor_conc
     
 def find_conc(xop,yop,xvar,yvar,cvar):
@@ -79,21 +80,21 @@ def findx0(A,B,C,D,E,F):
     
     return x0c
 
-def find_solution(sens_conc,sens_locx,sens_locy):
+def find_solution(sens_conc,sensor_locx,sensor_locy):
     A= sens_conc[0]-sens_conc[1]
-    B= -2*sens_locx[0]*sens_conc[0]+2*sens_locx[1]*sens_conc[1]
-    C= -2*sens_locy[0]*sens_conc[0]+2*sens_locy[1]*sens_conc[1]
-    D= sens_conc[0]*(sens_locx[0]**2+sens_locy[0]**2)-sens_conc[1]*(sens_locx[1]**2+sens_locy[1]**2)
+    B= -2*sensor_locx[0]*sens_conc[0]+2*sensor_locx[1]*sens_conc[1]
+    C= -2*sensor_locy[0]*sens_conc[0]+2*sensor_locy[1]*sens_conc[1]
+    D= sens_conc[0]*(sensor_locx[0]**2+sensor_locy[0]**2)-sens_conc[1]*(sensor_locx[1]**2+sensor_locy[1]**2)
 
     E= sens_conc[2]-sens_conc[3]
-    F= -2*sens_locx[2]*sens_conc[2]+2*sens_locx[3]*sens_conc[3]
-    G= -2*sens_locy[2]*sens_conc[2]+2*sens_locy[3]*sens_conc[3]
-    H= sens_conc[2]*(sens_locx[2]**2+sens_locy[2]**2)-sens_conc[3]*(sens_locx[3]**2+sens_locy[3]**2)
+    F= -2*sensor_locx[2]*sens_conc[2]+2*sensor_locx[3]*sens_conc[3]
+    G= -2*sensor_locy[2]*sens_conc[2]+2*sensor_locy[3]*sens_conc[3]
+    H= sens_conc[2]*(sensor_locx[2]**2+sensor_locy[2]**2)-sens_conc[3]*(sensor_locx[3]**2+sensor_locy[3]**2)
 
     I= sens_conc[1]-sens_conc[3]
-    J= -2*sens_locx[1]*sens_conc[1]+2*sens_locx[3]*sens_conc[3]
-    K= -2*sens_locy[1]*sens_conc[1]+2*sens_locy[3]*sens_conc[3]
-    L= sens_conc[1]*(sens_locx[1]**2+sens_locy[1]**2)-sens_conc[3]*(sens_locx[3]**2+sens_locy[3]**2)
+    J= -2*sensor_locx[1]*sens_conc[1]+2*sensor_locx[3]*sens_conc[3]
+    K= -2*sensor_locy[1]*sens_conc[1]+2*sensor_locy[3]*sens_conc[3]
+    L= sens_conc[1]*(sensor_locx[1]**2+sensor_locy[1]**2)-sens_conc[3]*(sensor_locx[3]**2+sensor_locy[3]**2)
 
     M = B*I-A*J
     N = B*E-A*F
@@ -104,12 +105,35 @@ def find_solution(sens_conc,sens_locx,sens_locy):
     if (den != 0):
         y0c = (num)/(den)
         x0c = (A*H-D*E-(C*E-A*G)*y0c)/(B*E-A*F)
-        c0c = find_conc(x0c,y0c,sens_locx[0],sens_locy[0],sens_conc[0])
+        c0c = find_conc(x0c,y0c,sensor_locx[0],sensor_locy[0],sens_conc[0])
     else:
         print('no soln')
 
     return c0c,x0c,y0c
+ 
+def min_error(xgrid,ygrid):
     
+    c0g = 100.0
+    max_error = 999
+    
+    for ix in xgrid:
+        for iy in ygrid:
+            for isens in range(0,num_tot):
+                if debug: print('sens',ix,sensor_locx[isens],iy,sensor_locy[isens])
+                if (sensor_locx[isens] != ix and sensor_locy[isens] != iy):
+                    c_calc[isens] = c0g/((sensor_locx[isens]-ix)**2+(sensor_locy[isens]-iy)**2)
+                    g_error[isens] = (c_calc[isens]-sens_conc[isens])/sens_conc[isens]*100
+                    if debug: print('error',ix,iy,c_calc[isens],sens_conc[isens],g_error[isens])
+                else: g_error[isens] = 999
+
+        
+            if (np.sum(np.absolute(g_error)) < np.absolute(max_error)): 
+                max_error = np.sum(np.absolute(g_error[isens]))
+                g_ix = ix
+                g_iy = iy
+                if debug: print('min error',c_calc[isens],g_ix,g_iy,max_error)
+
+    return g_ix,g_iy
 ### main program
 
 # close all previous plots
@@ -120,46 +144,54 @@ plt.close('all')
 
 # Right now num_sens_corner+num_sens_bus+num_sens_drones must equal 4
 
-num_sens_corner = 2 # number of sensors that are on the corners of the grid
-num_sens_bus = 1    # number of sensors that are on a bus (random location on streets)
-num_sens_drones=1   # number of sensors that are on a drone (random location anywhere)
-num_iterations = 10 # number of iterations
+num_sens_corner = 4 # number of sensors that are on the corners of the grid
+num_sens_bus = 4    # number of sensors that are on a bus (random location on streets)
+num_sens_drones=4  # number of sensors that are on a drone (random location anywhere)
+num_tot = num_sens_corner+num_sens_bus+num_sens_drones
+num_iterations = 100 # number of iterations
 
 min_loc = 0         # minimum integer location of grid (typically 0)
-max_loc = 7         # maximum integer location of grid
-per_error = 0.1     # percent error to add to concentration (i.e. 0.1 for 10% error)
+max_loc = 15         # maximum integer location of grid
+per_error = 0.1    # percent error to add to concentration (i.e. 0.1 for 10% error)
 debug = False       # Set to False unless you want the extra print statemetns for debugging
 do_plots= False     # Set to False unless you want to create a figure for every iteration 
 
 # Define arrays
 
-sensor_locxc=np.zeros(num_sens_corner, dtype=np.float64)
-sensor_locyc=np.zeros(num_sens_corner, dtype=np.float64)
-sensor_locxb=np.zeros(num_sens_bus,dtype=np.float64)
-sensor_locyb=np.zeros(num_sens_bus,dtype=np.float64)
-sensor_locxd=np.zeros(num_sens_drones,dtype=np.float64)
-sensor_locyd=np.zeros(num_sens_drones,dtype=np.float64)
+c_calc = np.zeros(num_tot)
+g_error = np.zeros(num_tot)
+g_ix = np.zeros(num_tot)
+g_iy = np.zeros(num_tot)
 
+sensor_locx=np.zeros(num_tot)
+sensor_locy=np.zeros(num_tot)
+#sensor_locx = np.zeros(4)
+#sensor_locy=np.zeros(4)
 x0c_stats=np.zeros(num_iterations)
 y0c_stats=np.zeros(num_iterations)
 c0c_stats=np.zeros(num_iterations)
+x0ce_stats=np.zeros(num_iterations)
+y0ce_stats=np.zeros(num_iterations)
 
 for i in range(0,num_iterations):
     # Define sensor locations
-    sens_locxc, sens_locyc = sens_loc_corner(min_loc,max_loc,num_sens_corner)
-    sens_locxb, sens_locyb = sens_loc_bus(min_loc,max_loc,num_sens_bus)
-    sens_locxd, sens_locyd = sens_loc_drones(min_loc,max_loc,num_sens_drones)
+    if (num_sens_corner != 0): sensor_locx, sensor_locy = sens_loc_corner(min_loc,max_loc,num_sens_corner)
+#    sensor_locx.append(sensor_locx)
+#    sensor_locy.append(sensor_locy)
     
-    # Create one array of all the sensor locations
-    sens_locx = np.append(sens_locxc,sens_locxb)
-    sens_locx = np.append(sens_locx,sens_locxd)
-    sens_locy = np.append(sens_locyc,sens_locyb)
-    sens_locy = np.append(sens_locy,sens_locyd)
+    if (num_sens_bus != 0):sensor_locx, sensor_locy = sens_loc_bus(min_loc,max_loc,num_sens_corner,num_sens_corner+num_sens_bus)
+#    sensor_locx.append(sensor_locx)
+#    sensor_locy.append(sensor_locy)
     
+    if (num_sens_drones != 0): sensor_locx, sensor_locy = sens_loc_drones(min_loc,max_loc,num_sens_corner+num_sens_bus,num_tot)
+#    sensor_locx.append(sensor_locx)
+#    sensor_locy.append(sensor_locy)
+
     # Randomly choose source location and concentration and add error
     
-    c0,x0,y0,sens_conc = defconc(1,100,min_loc,max_loc,sens_locx,sens_locy,per_error)
+    c0,x0,y0,sens_conc = defconc(1,100,min_loc,max_loc,sensor_locx,sensor_locy,per_error)
 
+#    if debug:
     if debug:
         print('******************************************')
         print('Assumed Source Location: '+str(x0)+' , '+str(y0))
@@ -168,13 +200,31 @@ for i in range(0,num_iterations):
 
     # Find calculated source location and concentration
     
-    c0c,x0c,y0c = find_solution(sens_conc,sens_locx,sens_locy)
+    c0c,x0c,y0c = find_solution(sens_conc,sensor_locx,sensor_locy)
     
-    # Define statistics
+    # Define statistics for algebraic solution
     
-    x0c_stats[i] = (x0c-x0)/x0*100
-    y0c_stats[i] = (y0c-y0)/y0*100
-    c0c_stats[i] = (c0c-c0)/c0*100
+    x0c_stats[i] = (x0c-x0)#/x0*100
+    y0c_stats[i] = (y0c-y0)#/y0*100
+    c0c_stats[i] = (c0c-c0)#/c0*100
+    
+    # Minimize error
+
+    xgrid = np.arange(min_loc,max_loc,0.5)
+    ygrid = np.arange(min_loc,max_loc,0.5)
+
+    g_ix,g_iy=min_error(xgrid,ygrid)
+ 
+    xgrid = np.arange(g_ix-0.5,g_ix+0.5,0.01)
+    ygrid = np.arange(g_iy-0.5,g_iy+0.5,0.01)
+    
+    g_ix,g_iy=min_error(xgrid,ygrid)
+ 
+#   Define statistics for minimize error
+
+    x0ce_stats[i] = (g_ix-x0) #/x0*100
+    y0ce_stats[i] = (g_iy-y0) #/y0*100
+#    c0ce_stats[i] = (c0c-c0)/c0*100
     
     if debug:
         print('******************************************')
@@ -182,6 +232,8 @@ for i in range(0,num_iterations):
         print('Calculated Source Concentration: '+str(c0c))
         print('Calculated Source Location Error: '+str(x0c_stats[i])+' , '+str(y0c_stats[i]))
         print('Calculated Source Concentration: '+str(c0c_stats[i]))
+        print('Calculated Source Location Error MinE: '+str(x0ce_stats[i])+' , '+str(y0ce_stats[i]))
+#        print('Calculated Source Concentration: '+str(c0c_stats[i]))
         print('--------------------------------------------------------') 
         
     if do_plots:    
@@ -189,35 +241,65 @@ for i in range(0,num_iterations):
         plt.xlim((min_loc,max_loc))
         plt.ylim((min_loc,max_loc))
     
-        plt.axvspan(0, 7, color='g', alpha=0.5, lw=0)
+        plt.axvspan(min_loc, max_loc, color='g', alpha=0.5, lw=0)
         plt.axvspan(3, 4,color='grey', alpha=0.5, lw=0)
         plt.axhspan(3, 4,color='grey', alpha=0.5, lw=0)
 
         plt.scatter(x0,y0,4*c0,color='r',marker='*')
 
         for it in range(0,num_sens_corner):
-            plt.scatter(sens_locxc[it],sens_locyc[it],s=500,color='blue')
+            plt.scatter(sensor_locx[it],sensor_locy[it],s=500,color='blue')
  
-        for it in range(0,num_sens_bus):
-            plt.scatter(sens_locxb[it],sens_locyb[it],s=300,color='purple', marker='4')
+        for it in range(num_sens_corner,num_sens_corner+num_sens_bus):
+            plt.scatter(sensor_locx[it],sensor_locy[it],s=300,color='purple', marker='4')
        
-        for it in range(0,num_sens_drones):
-            plt.scatter(sens_locxd[it],sens_locyd[it],s=300,color='orange', marker='8')
+        for it in range(num_sens_corner+num_sens_bus,num_tot):
+            plt.scatter(sensor_locx[it],sensor_locy[it],s=300,color='orange', marker='8')
     
         plt.scatter(x0c,y0c,c0c,color='green',marker='^')
+        plt.scatter(g_ix,g_iy,100,color='green',marker='+')
 
 # Print Median and Mean (average) error over all iterations
+stats='median'
 
-print('**************************************************')
-print('Median Error in X Location '+str(np.median(x0c_stats)))
-print('Median Error in Y Location '+str(np.median(y0c_stats)))
-print('Median Error in Concentration '+str(np.median(c0c_stats)))
-print('**************************************************') 
+if stats=='median' or stats=='both':
+    print('**************************************************')
+    print('Algebra')
+    print('**************************************************')
+    print('Median Error in X Location '+str(np.median(np.absolute(x0c_stats))))
+    print('Median Error in Y Location '+str(np.median(np.absolute(y0c_stats))))
+    print('Median Error in Concentration '+str(np.median(np.absolute(c0c_stats))))
+    print('**************************************************') 
+    print('**************************************************')
+    print('Minimize Error')
+    print('**************************************************')
+    print('Median Error in X Location '+str(np.median(np.absolute(x0ce_stats))))
+    print('Median Error in Y Location '+str(np.median(np.absolute(y0ce_stats))))
+    #print('Median Error in Concentration '+str(np.median(c0c_stats)))
+    print('**************************************************') 
+if stats =='mean' or stats=='both':
+    print('**************************************************')
+    print('Algebra')
+    print('**************************************************')
+    print('Mean Error in X Location '+str(np.mean(np.absolute(x0c_stats))))
+    print('Mean Error in Y Location '+str(np.mean(np.absolute(y0c_stats))))
+    print('Mean Error in Concentration '+str(np.mean(np.absolute(c0c_stats))))
+    print('**************************************************')       
+    print('Minimize Error')
+    print('**************************************************')
+    print('Mean Error in X Location '+str(np.mean(np.absolute(x0ce_stats))))
+    print('Mean Error in Y Location '+str(np.mean(np.absolute(y0ce_stats))))
+    #print('Mean Error in Concentration '+str(np.mean(c0c_stats)))
+    print('**************************************************') 
 
-print('**************************************************')
-print('Mean Error in X Location '+str(np.mean(x0c_stats)))
-print('Mean Error in Y Location '+str(np.mean(y0c_stats)))
-print('Mean Error in Concentration '+str(np.mean(c0c_stats)))
-print('**************************************************') 
-
+#indices = np.argmin(np.absolute(g_error))        
+#print(g_ix,g_iy)
+#if False:'''
+if num_iterations > 1:
+    plt.hist(x0c_stats,color='r')
+    plt.hist(y0c_stats,color='g')
+    plt.figure()
+    plt.hist(x0ce_stats,color='r')
+    plt.hist(y0ce_stats,color='g')
+#'''
 plt.show()
