@@ -1,27 +1,85 @@
-# This subroutine is to define an intial source concentration (with the maximum concentration=maxconc) and initial
-# source location (from 0 to maxx).  It then creates random locations for maxsensors number of sensors and calculates the
-# concentration based on 1/r^2.  It then calculates an error with a "normal" distribution and adds the error to the concentration.
-
-def define_source(maxsensors,maxconc,maxx):
-    source_conc=np.random.uniform(0,maxconc)
-    source_loc=np.random.uniform(0,maxx)
-    sensor_loc = np.random.uniform(0,maxx,maxsensors)
-    sensor_conc = source_conc/(source_loc-sensor_loc)**2
-    error = np.random.normal(0,1,maxsensors)
-    sensor_conc = sensor_conc + error
-    
-    return source_conc,source_loc,sensor_loc,sensor_conc
-
 import numpy as np
+import math
 import matplotlib.pyplot as plt
-plt.ion()
+
+def defconc(minconc,maxconc,minloc,maxloc,numsens):
+    source_conc = np.random.uniform(minconc,maxconc)
+    source_locx=np.random.uniform(minloc,maxloc)
+    source_locy=np.random.uniform(minloc,maxloc)
+    sensor_locx = np.random.uniform(minloc,maxloc,numsens)
+    sensor_locy = np.random.uniform(minloc,maxloc,numsens)
+    sensor_conc = source_conc/((source_locx-sensor_locx)**2+(source_locy-sensor_locy)**2)
+    return source_conc,source_locx, source_locy, sensor_conc, sensor_locx,sensor_locy
+    
+def find_conc(xop,yop,xvar,yvar,cvar):
+  co = cvar*((xop-xvar)**2+(yop-yvar)**2)
+  return co
+  
+def montypython (A,B,C):
+    x01=(-B+math.sqrt(B**2-4*A*C))/(2*A)
+    x02=(-B-math.sqrt(B**2-4*A*C))/(2*A)
+    return x01,x02
+    
+def findx0(A,B,C,D,E,F):
+    x0c=(-D*C+A*F)/(D*B-A*E)
+    
+    return x0c
+
+
+plt.clf()
+c0,x0,y0,sens_conc,sens_locx, sens_locy = defconc(1,100,0,6,3)
+
+print('******************************************')
+print('Assumed Source Location: '+str(x0)+' , '+str(y0))
+print('Assumed Source Concentration: '+str(c0))
+print('--------------------------------------------------------')
+#for ise in range(0,3):
+#    print('Sensor '+str(ise+1))
+#    print('Location '+ str(sens_locx[ise])+' , '+ str(sens_locy[ise])+ ' Concentration = '+str(sens_conc[ise]))
+#    print('--------------------------------------------------------')
+
+A= sens_conc[0]-sens_conc[1]
+B= -2*sensor_locx[0]*sens_conc[0]+2*sensor_locx[1]*sens_conc[1]
+C= -2*sensor_locy[0]*sens_conc[0]+2*sensor_locy[1]*sens_conc[1]
+D= sens_conc[0]*(sensor_locx[0]**2+sensor_locy[0]**2)-sens_conc[1]*(sensor_locx[1]**2+sensor_locy[1]**2)
+
+E= sens_conc[2]-sens_conc[3]
+F= -2*sensor_locx[2]*sens_conc[2]+2*sensor_locx[3]*sens_conc[3]
+G= -2*sensor_locy[2]*sens_conc[2]+2*sensor_locy[3]*sens_conc[3]
+H= sens_conc[2]*(sensor_locx[2]**2+sensor_locy[2]**2)-sens_conc[3]*(sensor_locx[3]**2+sensor_locy[3]**2)
+
+I= sens_conc[1]-sens_conc[3]
+J= -2*sensor_locx[1]*sens_conc[1]+2*sensor_locx[3]*sens_conc[3]
+K= -2*sensor_locy[1]*sens_conc[1]+2*sensor_locy[3]*sens_conc[3]
+L= sens_conc[1]*(sensor_locx[1]**2+sensor_locy[1]**2)-sens_conc[3]*(sensor_locx[3]**2+sensor_locy[3]**2)
+
+M = B*I-A*J
+N = B*E-A*F
+
+num = N*A*L-N*I*D-M*A*H+M*D*E
+den = -C*E*M+A*G*M+N*I*C-N*A*K
+
+if (den != 0):
+    y0c = (num)/(den)
+    x0c = (A*H-D*E-(C*E-A*G)*y0c)/(B*E-A*F)
+    c0c = find_conc(x0c,y0c,sensor_locx[0],sensor_locy[0],sens_conc[0])
+else:
+    print('no soln')
+
+
+print('******************************************')
+print('Calculated Source Location: '+str(x01c)+' , '+str(y01c))
+print('Calculated Source Concentration: '+str(c01c))
+print('--------------------------------------------------------') 
+print('or')
+print('Calculated Source Location: '+str(x02c)+' , '+str(y02c))
+print('Calculated Source Concentration: '+str(c02c))
+print('--------------------------------------------------------') 
+
+plt.scatter(x0,y0,4*c0,color='red')
+for it in range(0,3):
+    plt.scatter(sens_locx[it],sens_locy[it],4*sens_conc[it],color='blue')
+    
+plt.scatter(x01c,y01c,4*c01c,color='green',marker='*')
+plt.scatter(x02c,y02c,4*c02c,color='green',marker='*')
 plt.show()
-source_conc,source_loc,sensor_loc,sensor_conc = define_source(6,100,6)
-
-plt.scatter(source_loc,0,source_conc,color='red')
-for i in range(1,6):
-    
-    plt.scatter(sensor_loc[i],0,sensor_conc[i],color='blue')
-
-
-    
