@@ -1,8 +1,39 @@
 import numpy as np
 import math
 import matplotlib.pyplot as plt
+import random
+def bus(minx,miny):
+    valid=False
+    while (valid == False):
+        x=random.random()*6
+        y=random.random()*6
+    if x >= 2 and x <= 3:
+        busx=x
+        busy=y
+        valid=True
+    elif y > 2 and y < 3:
+        busx=x
+        busy=y
+        valid=True
+    plt.scatter(busx,busy,color='red',s=300,marker='8')
+def defconc(minconc,maxconc,minloc,maxvalid=False
 
-def defconc(minconc,maxconc,minloc,maxloc,numsens):
+print ('starting',valid)
+
+while (valid == False):
+  print('Im trying again')
+  x=random.random()*6
+  y=random.random()*6
+  print (x)
+  print (y)
+  if x >= 2 and x <= 3:
+    busx=x
+    busy=y
+    valid=True
+  elif y > 2 and y < 3:
+    busx=x
+    busy=y
+    valid=Trueloc,numsens):
     source_conc = np.random.uniform(minconc,maxconc)
     source_locx=np.random.uniform(minloc,maxloc)
     source_locy=np.random.uniform(minloc,maxloc)
