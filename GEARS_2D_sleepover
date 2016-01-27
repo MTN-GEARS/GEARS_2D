@@ -2,38 +2,29 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 import random
+
 def bus(minx,miny):
     valid=False
-    while (valid == False):
+    count = 0
+    while (valid == False and count < 10):
+        print ('In here',count)
+        count = count + 1
         x=random.random()*6
         y=random.random()*6
-    if x >= 2 and x <= 3:
-        busx=x
-        busy=y
-        valid=True
-    elif y > 2 and y < 3:
-        busx=x
-        busy=y
-        valid=True
-    plt.scatter(busx,busy,color='red',s=300,marker='8')
-def defconc(minconc,maxconc,minloc,maxvalid=False
-
-print ('starting',valid)
-
-while (valid == False):
-  print('Im trying again')
-  x=random.random()*6
-  y=random.random()*6
-  print (x)
-  print (y)
-  if x >= 2 and x <= 3:
-    busx=x
-    busy=y
-    valid=True
-  elif y > 2 and y < 3:
-    busx=x
-    busy=y
-    valid=Trueloc,numsens):
+        
+        if x >= 2 and x <= 3:
+            busx=x
+            busy=y
+            valid=True
+            print('busx', busx,busy,valid)
+        elif y > 2 and y < 3:
+            busx=x
+            busy=y
+            valid=True
+            print('busy', busx,busy,valid)
+    return busx,busy
+      
+def defconc(minconc,maxconc,minloc,maxloc,numsens):
     source_conc = np.random.uniform(minconc,maxconc)
     source_locx=np.random.uniform(minloc,maxloc)
     source_locy=np.random.uniform(minloc,maxloc)
@@ -57,8 +48,17 @@ def findx0(A,B,C,D,E,F):
     return x0c
 
 plt.clf()
-c0,x0,y0,sens_conc,sens_locx, sens_locy = defconc(1,100,0,6,3)
+minconc = 1
+maxconc = 100
+mingrid = 0
+maxgrid = 6
+numsens = 3
+c0,x0,y0,sens_conc,sens_locx, sens_locy = defconc(minconc,maxconc,mingrid,maxgrid,numsens)
 
+busx,busy=bus(0,5)
+sens_locx[2] = busx
+sens_locy[2]=busy
+sens_conc[2] = c0/((x0-sens_locx[2])**2+(y0-sens_locy[2])**2)
 print('******************************************')
 print('Assumed Source Location: '+str(x0)+' , '+str(y0))
 print('Assumed Source Concentration: '+str(c0))
@@ -103,7 +103,11 @@ else:
   print('Calculated Source Concentration: '+str(c02c))
   print('--------------------------------------------------------') 
 
+
+     
 plt.scatter(x0,y0,4*c0,color='red')
+print('busx,busy after',busx,busy)
+plt.scatter(busx,busy,100,color='purple',marker='^')
 for it in range(0,3):
     plt.scatter(sens_locx[it],sens_locy[it],4*sens_conc[it],color='blue')
     
