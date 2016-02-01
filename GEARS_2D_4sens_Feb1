@@ -1,0 +1,190 @@
+import numpy as np
+#import math
+import matplotlib.pyplot as plt
+
+
+# Define modules
+
+# Module to define locations of ground sensors.
+def sens_loc_corner(min_loc,max_loc,num):
+    
+#### ASSIGNMENT:  What is the impact of using max_loc, max_loc for 
+# sensor 3?  What is the best fraction to use to make sure it works.
+# If you add error, can you get rid of the fraction?
+
+    if num >= 1:
+        sensor_locx[0]=min_loc
+        sensor_locy[0]=max_loc
+    if num >= 2:
+        sensor_locx[1]=max_loc
+        sensor_locy[1]=min_loc
+    if num >= 3:
+        sensor_locx[2]=max_loc*0.999
+        sensor_locy[2]=max_loc*0.999
+    if num >= 4:
+        sensor_locx[3]=min_loc
+        sensor_locy[3]=min_loc
+    if num == 0:
+        print 'Sorry, You cannot solve with Zero sensors!'
+    if num < 0:
+        print 'Sorry, You cannot have Negative sensors!'
+    return sensor_locx, sensor_locy
+    
+# Module to define bus locations
+def bus(max_loc,numsens):
+    valid=False
+    count = 0
+    while (valid == False and count < 10):
+#       To make sure it doesn't get into an infinite loop
+        count = count + 1
+        x=np.random.rand()*maxgrid
+        y=np.random.random()*maxgrid
+        
+        if x >= 2 and x <= 3:
+            busx=x
+            busy=y
+            valid=True
+            print('busx', busx,busy,valid)
+        elif y > 2 and y < 3:
+            busx=x
+            busy=y
+            valid=True
+            print('busy', busx,busy,valid)
+    return busx,busy
+  
+#Module to define locations of drones  
+def sens_loc_drones(min_loc,max_loc,numsens):
+     drone_locx= np.random.uniform(min_loc,max_loc,numsens)
+     drone_locy= np.random.uniform(min_loc,max_loc,numsens)
+     return drone_locx, drone_locy   
+  
+# Module to define source location, source concentration, sensor concentrations, + uncertainty
+
+def defconc(minconc,maxconc,minloc,maxloc,sensor_locx,sensor_locy,sigma_error):
+    
+#### ASSIGNMENT: What can you do to confirm that your random numbers are uniform or normal?
+#                Does the random error do what you expect?  IE does a number of 0.1 add a 10% error?   
+    source_conc = np.random.uniform(minconc,maxconc)
+    source_locx=np.random.uniform(minloc,maxloc)
+    source_locy=np.random.uniform(minloc,maxloc)
+   
+    sensor_conc = source_conc/((source_locx-sensor_locx)**2+(source_locy-sensor_locy)**2)
+    
+    if (sigma_error != 0):
+        error=np.random.normal(0,sigma_error/100,numsens)
+    else:
+        error = np.zeros(numsens)
+        
+    sensor_conc = sensor_conc+error
+
+    return source_conc,source_locx, source_locy, sensor_conc
+
+    
+def find_solution(sens_conc,sensor_locx,sensor_locy):
+#### ASSIGNMENT: what error checking can you add to make sure you have the right number of sensors?
+    
+    A= sens_conc[0]-sens_conc[1]
+    B= -2*sensor_locx[0]*sens_conc[0]+2*sensor_locx[1]*sens_conc[1]
+    C= -2*sensor_locy[0]*sens_conc[0]+2*sensor_locy[1]*sens_conc[1]
+    D= sens_conc[0]*(sensor_locx[0]**2+sensor_locy[0]**2)-sens_conc[1]*(sensor_locx[1]**2+sensor_locy[1]**2)
+
+    E= sens_conc[2]-sens_conc[3]
+    F= -2*sensor_locx[2]*sens_conc[2]+2*sensor_locx[3]*sens_conc[3]
+    G= -2*sensor_locy[2]*sens_conc[2]+2*sensor_locy[3]*sens_conc[3]
+    H= sens_conc[2]*(sensor_locx[2]**2+sensor_locy[2]**2)-sens_conc[3]*(sensor_locx[3]**2+sensor_locy[3]**2)
+
+    I= sens_conc[1]-sens_conc[3]
+    J= -2*sensor_locx[1]*sens_conc[1]+2*sensor_locx[3]*sens_conc[3]
+    K= -2*sensor_locy[1]*sens_conc[1]+2*sensor_locy[3]*sens_conc[3]
+    L= sens_conc[1]*(sensor_locx[1]**2+sensor_locy[1]**2)-sens_conc[3]*(sensor_locx[3]**2+sensor_locy[3]**2)
+
+    M = B*I-A*J
+    N = B*E-A*F
+
+    num = N*A*L-N*I*D-M*A*H+M*D*E
+    den = -C*E*M+A*G*M+N*I*C-N*A*K
+    if (den != 0):
+        y0c = (num)/(den)
+        x0c = (A*H-D*E-(C*E-A*G)*y0c)/(B*E-A*F)
+        c0c = sens_conc[0]*((sensor_locx[0]-x0c)**2 + (sensor_locy[0]-y0)**2)
+    else:
+        print('no soln')
+
+    return c0c,x0c,y0c
+
+# Main Program
+
+#Define constants
+
+
+#### ASSIGNMENT
+# Comment the code, specify what input you expect, and put in code to make sure
+# Code won't break.  
+
+plt.clf()
+minconc = 1  # Minimum Concentration, can not be less than 0
+maxconc = 100
+mingrid = 0
+maxgrid = 6
+numsens = 4   # Can this be any number?
+sigma_error = 0.0
+
+# define arrays
+sensor_locx=np.zeros(numsens)
+sensor_locy=np.zeros(numsens)
+
+#### ASSIGNMENT
+
+# Right now the code works for exactly four sensors.  Find a way to:
+# a) put in logic such that if you specified type it would call one of
+# the subroutines below.
+# b) put in logic such that the user could specify the number of corner
+# grids, the number of drones, and the number of buses.  Add logic so that the
+# numbers add up to 4.
+
+# Corner sensors
+sensor_locx, sensor_locy = sens_loc_corner(mingrid,maxgrid,numsens)
+
+# Drone sensors
+
+#sensor_locx, sensor_locy   = sens_loc_drones(mingrid,maxgrid,numsens)
+
+# Bus sensors
+##### ASSIGNMENT: adapt bus subroutine so that it gives back an array with numsens sensors.
+
+#sensor_locx,sensor_locy=bus(maxgrid,numsens)
+
+
+c0,x0,y0,sens_conc = defconc(minconc,maxconc,mingrid,maxgrid,sensor_locx,sensor_locy,sigma_error)
+
+# Find solution
+
+c0c,x0c,y0c = find_solution(sens_conc,sensor_locx,sensor_locy)
+
+# Print solution
+print('******************************************')
+print('Assumed Source Location: '+str(x0)+' , '+str(y0))
+print('Assumed Source Concentration: '+str(c0))
+print('--------------------------------------------------------')
+
+print('******************************************')
+print('Calculated Source Location: '+str(x0c)+' , '+str(y0c))
+print('Calculated Source Concentration: '+str(c0c))
+print('--------------------------------------------------------') 
+
+#Plot solution
+
+##### ASSIGNMENT: Adapt the plotting routine to use colors and markers as you think is best.  
+# Also, color the grid cells to represent the "grass" and the "roads"
+
+plt.scatter(x0,y0,4*c0,color='red')
+
+#plt.scatter(busx,busy,100,color='purple',marker='^')
+for it in range(0,numsens):
+    plt.scatter(sensor_locx[it],sensor_locy[it],50*sens_conc[it],color='blue')
+
+plt.scatter(x0c,y0c,4*c0c,color='green')
+plt.show()
+
+##### ASSIGNMENT: Play around with the code.  Change sigma_error, the size of the grid, min_conc, max_conc, etc.
+# Can you break the code?  Do the answers give what you expect?
