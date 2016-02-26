@@ -1,0 +1,259 @@
+import numpy as np
+#import math
+import matplotlib.pyplot as plt
+import sys
+
+# Define modules
+
+# Module to define locations of ground sensors.
+def sens_loc_corner(min_loc,max_loc,num):
+    
+    if num >= 1:
+        sensor_locx[0]=min_loc
+        sensor_locy[0]=max_loc
+    if num >= 2:
+        sensor_locx[1]=max_loc
+        sensor_locy[1]=min_loc
+    if num >= 3:
+        sensor_locx[2]=max_loc/2.0 #*0.99
+        sensor_locy[2]=max_loc/2.0 #*0.99
+    if num >= 4:
+        sensor_locx[3]=min_loc #max_loc
+        sensor_locy[3]=min_loc #max_loc
+        if num == 0:
+            print 'Sorry, You cannot solve with Zero sensors!'
+    if num < 0:
+        print 'Sorry, You cannot have Negative sensors!'
+    return sensor_locx, sensor_locy
+    
+# Module to define bus locations
+def bus(max_loc,num1,num2,minroad,maxroad):
+    
+    for isens in range(num1-1,num2-1):
+        valid=False
+        count = 0
+        while (valid == False and count < 10):
+#       To make sure it doesn't get into an infinite loop
+           count = count + 1
+           x=np.random.rand()*max_loc
+           y=np.random.random()*max_loc
+        
+           if x >= minroad and x <= maxroad:
+              sensor_locx[isens]=x
+              sensor_locy[isens]=y
+              valid=True
+           elif y >minroad and y < maxroad:
+              sensor_locx[isens]=x
+              sensor_locy[isens]=y
+              valid=True
+           
+    return sensor_locx,sensor_locy
+  
+#Module to define locations of drones  
+def sens_loc_drones(min_loc,max_loc,num1,num2):
+    for isens in range(num1-1,num2-1):
+   
+        sensor_locx[isens]= np.random.uniform(min_loc,max_loc)
+        sensor_locy[isens]= np.random.uniform(min_loc,max_loc)
+    
+    return sensor_locx,sensor_locy   
+  
+# Module to define source location, source concentration, sensor concentrations, + uncertainty
+
+def defconc(minconc,maxconc,minloc,maxloc,sensor_locx,sensor_locy,sigma_error):
+    
+    source_conc = np.random.uniform(minconc,maxconc)
+    source_locx=np.random.uniform(minloc,maxloc)
+    source_locy=np.random.uniform(minloc,maxloc)
+   
+    sensor_conc = source_conc/((source_locx-sensor_locx)**2+(source_locy-sensor_locy)**2)
+    
+    if (sigma_error != 0):
+        error=np.random.normal(0,sigma_error/100.0,numsens)
+    else:
+        error = np.zeros(numsens)
+        
+    sensor_conc = sensor_conc*(1.0-error)
+    
+    return source_conc,source_locx, source_locy, sensor_conc
+
+    
+def find_solution(sens_conc,sensor_locx,sensor_locy):
+    
+    A= sens_conc[0]-sens_conc[1]
+    B= -2*sensor_locx[0]*sens_conc[0]+2*sensor_locx[1]*sens_conc[1]
+    C= -2*sensor_locy[0]*sens_conc[0]+2*sensor_locy[1]*sens_conc[1]
+    D= sens_conc[0]*(sensor_locx[0]**2+sensor_locy[0]**2)-sens_conc[1]*(sensor_locx[1]**2+sensor_locy[1]**2)
+
+    E= sens_conc[2]-sens_conc[3]
+    F= -2*sensor_locx[2]*sens_conc[2]+2*sensor_locx[3]*sens_conc[3]
+    G= -2*sensor_locy[2]*sens_conc[2]+2*sensor_locy[3]*sens_conc[3]
+    H= sens_conc[2]*(sensor_locx[2]**2+sensor_locy[2]**2)-sens_conc[3]*(sensor_locx[3]**2+sensor_locy[3]**2)
+
+    I= sens_conc[1]-sens_conc[3]
+    J= -2*sensor_locx[1]*sens_conc[1]+2*sensor_locx[3]*sens_conc[3]
+#    K= -2*sensor_locy[1]*sens_conc[1]+2*sensor_locy[3]*sens_conc[3]
+    L= sens_conc[1]*(sensor_locx[1]**2+sensor_locy[1]**2)-sens_conc[3]*(sensor_locx[3]**2+sensor_locy[3]**2)
+
+    M = B*I-A*J
+    N = B*E-A*F
+
+    num = N*A*L-N*I*D-M*A*H+M*D*E
+    den = -C*E*M+A*G*M+N*I*C-N*A*0
+    if (den != 0):
+        y0c = (num)/(den)
+        x0c = (A*H-D*E-(C*E-A*G)*y0c)/(B*E-A*F)
+        c0c = sens_conc[0]*((sensor_locx[0]-x0c)**2 + (sensor_locy[0]-y0)**2)
+        flag = True
+    else:
+        print('no soln')
+        c0c = float('nan')
+        x0c = float('nan')
+        y0c = float('nan')
+        flag = False
+    if x0c < mingrid or x0c > maxgrid:
+        print('no soln')
+        c0c = float('nan')
+        x0c = float('nan')
+        y0c = float('nan')
+        flag = False
+    if y0c < mingrid or y0c > maxgrid:
+        print('no soln')
+        c0c = float('nan')
+        x0c = float('nan')
+        y0c = float('nan')
+        flag = False
+    if c0c < minconc or y0c > maxconc:
+        print('no soln')
+        c0c = float('nan')
+        x0c = float('nan')
+        y0c = float('nan')
+        flag = False
+    return c0c,x0c,y0c,flag
+
+# Main Program
+
+#Define constants
+
+######ASSIGNMENT
+# Comment the code, specify what input you expect, and put in code to make sure
+# Code won't break.  
+
+plt.clf()
+minconc = 1.0  # Minimum Concentration, can not be less than or equal 0
+if minconc <=0:
+ sys.exit('Mimimum Concentration cannot be less than or equal to 0.')   
+maxconc =100.0
+mingrid = 0.0
+maxgrid =5.0
+minroad=2.0
+maxroad=3.0
+#if round(mingrid) == round(maxgrid):
+#    sys.exit('the Grid is too small, please change mingrid and maxgrid')
+#numsens = 4 # Can this be any number? 
+
+######ASSIGNMENT
+
+#What error do you get if you use a different combination of sensors?
+negsens='Cannot have negative sensors!'
+num_sens_ground =2 # number of sensors that are on the corners of the grid
+if num_sens_ground<0:
+    sys.exit(negsens)
+num_sens_bus =1   # number of sensors that are on a bus (random location on streets)
+if num_sens_bus<0:
+    sys.exit(negsens)
+num_sens_drones=1 # number of sensors that are on a drone (random location anywhere)
+if num_sens_drones<0:
+    sys.exit(negsens)
+numsens = num_sens_ground+num_sens_bus+num_sens_drones
+numrepeats=1000
+if numrepeats <=0:
+    sys.exit('at least 1 run')
+
+if numsens != 4:
+    sys.exit('num_sens_ground, num_sens_bus, and num_sens_drones must add up to 4')
+#sigma_error = 0.0001*maxconc
+sigma_error=0
+# define arrays
+c0err=np.zeros(numrepeats)
+for it in range(0,numrepeats):
+    acount = 0
+    c0avg=0
+    c0err[it] = 0
+    sensor_locx=np.zeros(numsens)
+    sensor_locy=np.zeros(numsens)
+
+# Corner sensors
+    if (num_sens_ground != 0): sensor_locx, sensor_locy = sens_loc_corner(mingrid,maxgrid,num_sens_ground)
+
+# Bus sensors
+
+    if (num_sens_bus != 0): sensor_locx,sensor_locy=bus(maxgrid,num_sens_ground, num_sens_ground + num_sens_bus,minroad,maxroad)
+
+# Drone sensors
+
+    if (num_sens_drones != 0): sensor_locx, sensor_locy   = sens_loc_drones(mingrid,maxgrid,num_sens_ground+num_sens_bus,numsens)
+
+    c0,x0,y0,sens_conc = defconc(minconc,maxconc,mingrid,maxgrid,sensor_locx,sensor_locy,sigma_error)
+
+# Find solution
+
+    c0c,x0c,y0c,flag = find_solution(sens_conc,sensor_locx,sensor_locy)
+    if flag == True:
+        c0err[it] = (c0-c0c)/c0*100
+        acount=acount + 1
+        c0avg=c0avg+c0err[it]
+#        if False: '''
+            # Print solution
+        print('******************************************')
+        print('Assumed Source Location: '+str(x0)+' , '+str(y0))
+        print('Assumed Source Concentration: '+str(c0))
+        print('--------------------------------------------------------')
+
+        print('******************************************')
+        print('Calculated Source Location: '+str(x0c)+' , '+str(y0c))
+        print('Calculated Source Concentration: '+str(c0c))
+        print('--------------------------------------------------------') 
+        print('error',c0err[it])
+        if numrepeats <= 10:
+         
+            plt.xlim((mingrid,maxgrid))
+            plt.ylim((mingrid,maxgrid))
+
+            plt.axvspan(mingrid, maxgrid, color='g', lw=0, alpha=0.25)
+            plt.axvspan(minroad, maxroad,color='grey', lw=0, alpha=0.25)
+            plt.axhspan(minroad, maxroad,color='grey', lw=0, alpha=0.25)
+
+
+#plt.scatter(x0,y0,4.5*c0,color='red')
+
+#plt.scatter(busx,busy,100,color='purple',marker='^')
+
+            for it in range(0,numsens):
+                plt.scatter(sensor_locx[it],sensor_locy[it],40*sens_conc[it],color='blue')
+
+                plt.scatter(x0c,y0c,40*c0c,color='green')
+                plt.scatter(x0,y0,40.5*c0,color='red', marker = '*') 
+
+#    '''
+    
+
+
+if acount > 0: c0avg=c0avg/acount
+
+    #print(((c0-c0c) /c0)*100 )
+#plt.xlim(-10000,10000)
+print ("Avg error c0",c0avg)
+
+if numrepeats > 1:
+#    plt.hist(c0err,color='r',bins=100)
+#    plt.figure()
+    plt.ylim(0,200)
+    plt.hist(c0err,color='r',bins=20,range=[-1000,1000])
+#    plt.hist(c0err,color='r',bins=20)
+##### ASSIGNMENT: Adapt the plotting routine to use colors and markers as you think is best.  
+# Also, color the grid cells to represent the "grass" and the "roads"
+
+plt.show()
+##### ASSIGNMENT: Play around with the code.  Change sigma_error, the size of the grid, min_conc, max_conc, etc.
+# Can you break the code?  Do the answers give what you expect?
