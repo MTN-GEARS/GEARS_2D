@@ -101,7 +101,7 @@ def find_solution(sens_conc,sensor_locx,sensor_locy):
 
     I= sens_conc[1]-sens_conc[3]
     J= -2*sensor_locx[1]*sens_conc[1]+2*sensor_locx[3]*sens_conc[3]
-#    K= -2*sensor_locy[1]*sens_conc[1]+2*sensor_locy[3]*sens_conc[3]
+    K= -2*sensor_locy[1]*sens_conc[1]+2*sensor_locy[3]*sens_conc[3]
     L= sens_conc[1]*(sensor_locx[1]**2+sensor_locy[1]**2)-sens_conc[3]*(sensor_locx[3]**2+sensor_locy[3]**2)
 
     M = B*I-A*J
@@ -206,7 +206,8 @@ for it in range(0,numrepeats):
     c0,x0,y0,sens_conc = defconc(minconc,maxconc,mingrid,maxgrid,sensor_locx,sensor_locy,sigma_error)
 
 # Find solution
-
+    find_max_conc(sens_conc)
+    
     c0c,x0c,y0c,flag = find_solution(sens_conc,sensor_locx,sensor_locy)
     if flag == True:
         c0err[it] = (c0-c0c)/c0*100
