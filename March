@@ -163,15 +163,14 @@ maxroad=3.0
 #What error do you get if you use a different combination of sensors?
 negsens='Cannot have negative sensors!'
 num_sens_ground =4 # number of sensors that are on the corners of the grid
-num_sens_bus =4   # number of sensors that are on a bus (random location on streets)
-num_sens_drones=4 # number of sensors that are on a drone (random location anywhere)
+num_sens_bus =0   # number of sensors that are on a bus (random location on streets)
+num_sens_drones=0 # number of sensors that are on a drone (random location anywhere)
 numsens = num_sens_ground+num_sens_bus+num_sens_drones
 numrepeats=1
 
-if False:'''
 if numsens != 4:
     sys.exit('num_sens_ground, num_sens_bus, and num_sens_drones must add up to 4')
-'''
+
 if numrepeats <=0:
     sys.exit('at least 1 run')
 if num_sens_bus<0:
