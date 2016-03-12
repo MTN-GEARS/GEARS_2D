@@ -21,8 +21,8 @@ def sens_loc_corner(min_loc,max_loc,num):
         sensor_locx[1]=max_loc
         sensor_locy[1]=min_loc
     if num >= 3:
-        sensor_locx[2]=max_loc/2.0 #*0.99
-        sensor_locy[2]=max_loc/2.0 #*0.99
+        sensor_locx[2]=max_loc/2 #*0.99
+        sensor_locy[2]=max_loc/2 #*0.99
     if num >= 4:
         sensor_locx[3]=min_loc #max_loc
         sensor_locy[3]=min_loc #max_loc
@@ -84,8 +84,13 @@ def defconc(minconc,maxconc,minloc,maxloc,sensor_locx,sensor_locy,sigma_error):
     return source_conc,source_locx, source_locy, sensor_conc
 
     
-def find_solution(sens_conc,sensor_locx,sensor_locy):
-    
+def find_solution(sens_conc,sensor_locx,sensor_locy,no_sol_count):
+
+    source_str = 'Source '+str(x0)+' '+str(y0)+' '+str(c0)+'\n'
+    sens_x_str = 'Sensor  X Loctions '+str(sensor_locx)+'\n'
+    sens_y_str = 'Sensor Y Locations '+str(sensor_locy)+'\n'
+    sens_conc_str = 'Sensor Concentrations '+str(sens_conc)+'\n'
+   
     A= sens_conc[0]-sens_conc[1]
     B= -2*sensor_locx[0]*sens_conc[0]+2*sensor_locx[1]*sens_conc[1]
     C= -2*sensor_locy[0]*sens_conc[0]+2*sensor_locy[1]*sens_conc[1]
@@ -105,51 +110,58 @@ def find_solution(sens_conc,sensor_locx,sensor_locy):
     N = B*E-A*F
 
     num = N*A*L-N*I*D-M*A*H+M*D*E
-    den = -C*E*M+A*G*M+N*I*C-N*A*0
+    den = -C*E*M+A*G*M+N*I*C-N*A*K
     if (den != 0):
         y0c = (num)/(den)
         x0c = (A*H-D*E-(C*E-A*G)*y0c)/(B*E-A*F)
         c0c = sens_conc[0]*((sensor_locx[0]-x0c)**2 + (sensor_locy[0]-y0)**2)
         flag = True
     else:
-        print('no soln')
-        print('Source',x0,y0,c0)
-        print('Sensor',sens_conc)
+        fout.write('no soln \n')
+        fout.write(source_str)
+        fout.write(sens_x_str)
+        fout.write(sens_y_str)
+        fout.write(sens_conc_str)
         c0c = float('nan')
         x0c = float('nan')
         y0c = float('nan')
         flag = False
+        no_sol_count = no_sol_count + 1
     if x0c < mingrid or x0c > maxgrid:
-        print('no soln not in x grid')
-        print('Source',x0,y0,c0)
-        print('Sensor  X Loctions',sensor_locx)
-        print('Sensor  Y Loctions',sensor_locy)
-        print('Sensor Concentrations',sens_conc)
+        fout.write('no soln not in x grid \n')
+        fout.write(source_str)
+        fout.write(sens_x_str)
+        fout.write(sens_y_str)
+        fout.write(sens_conc_str)
         c0c = float('nan')
         x0c = float('nan')
         y0c = float('nan')
         flag = False
+        no_sol_count = no_sol_count + 1
     if y0c < mingrid or y0c > maxgrid:
-        print('no soln not in y grid')
-        print('Source',x0,y0,c0)
-        print('Sensor  X Loctions',sensor_locx)
-        print('Sensor  Y Loctions',sensor_locy)
-        print('Sensor Concentrations',sens_conc)
+        fout.write('no soln not in y grid \n')
+        fout.write(source_str)
+        fout.write(sens_x_str)
+        fout.write(sens_y_str)
+        fout.write(sens_conc_str)
         c0c = float('nan')
         x0c = float('nan')
         y0c = float('nan')
         flag = False
+        no_sol_count = no_sol_count + 1
     if c0c < minconc or y0c > maxconc:
-        print('no soln conc less than 0')
-        print('Source',x0,y0,c0)
-        print('Sensor  X Loctions',sensor_locx)
-        print('Sensor  Y Loctions',sensor_locy)
-        print('Sensor Concentrations',sens_conc)
+        fout.write('no soln conc less than 0 \n')
+        fout.write(source_str)
+        fout.write(sens_x_str)
+        fout.write(sens_y_str)
+        fout.write(sens_conc_str)
         c0c = float('nan')
         x0c = float('nan')
         y0c = float('nan')
         flag = False
-    return c0c,x0c,y0c,flag 
+        no_sol_count = no_sol_count + 1
+    
+    return c0c,x0c,y0c,flag,no_sol_count 
 
 # Main Program
 
@@ -158,7 +170,7 @@ def find_solution(sens_conc,sensor_locx,sensor_locy):
 ######ASSIGNMENT
 # Comment the code, specify what input you expect, and put in code to make sure
 # Code won't break.  
-
+fout = open('/Users/ltriplett/Desktop/python/debug_4_each','w')
 plt.clf()
 minconc = 1.0  # Minimum Concentration, can not be less than or equal 0
 if minconc <=0:
@@ -168,6 +180,8 @@ mingrid = 0.0
 maxgrid =5.0
 minroad=2.0
 maxroad=3.0
+
+no_sol_count = 0
 #if round(mingrid) == round(maxgrid):
 #    sys.exit('the Grid is too small, please change mingrid and maxgrid')
 
@@ -176,14 +190,11 @@ maxroad=3.0
 
 #What error do you get if you use a different combination of sensors?
 negsens='Cannot have negative sensors!'
-num_sens_ground =0 # number of sensors that are on the corners of the grid
+num_sens_ground =4 # number of sensors that are on the corners of the grid
 num_sens_bus =4   # number of sensors that are on a bus (random location on streets)
-num_sens_drones=0 # number of sensors that are on a drone (random location anywhere)
+num_sens_drones=4 # number of sensors that are on a drone (random location anywhere)
 numsens = num_sens_ground+num_sens_bus+num_sens_drones
-numrepeats=1
-
-if numsens != 4:
-    sys.exit('num_sens_ground, num_sens_bus, and num_sens_drones must add up to 4')
+numrepeats=1000
 
 if numrepeats <=0:
     sys.exit('at least 1 run')
@@ -194,7 +205,7 @@ if num_sens_drones<0:
 if num_sens_ground<0:
     sys.exit(negsens)
 
-sigma_error=0
+sigma_error=0.1
 # define arrays
 c0err=np.zeros(numrepeats)
 for it in range(0,numrepeats):
@@ -218,28 +229,29 @@ for it in range(0,numrepeats):
     
 # Find 4 largest concentrations
     sens_conc_new, sensor_locx_new, sensor_locy_new = find_max_conc(sens_conc, sensor_locx,sensor_locy)
-    print(sens_conc_new)
+
 
 
 # Find solution
-    c0c,x0c,y0c,flag = find_solution(sens_conc,sensor_locx,sensor_locy)
+    c0c,x0c,y0c,flag,no_sol_count = find_solution(sens_conc,sensor_locx,sensor_locy,no_sol_count)
     
     if flag == True:
         c0err[it] = (c0-c0c)/c0*100
         acount=acount + 1
         c0avg=c0avg+c0err[it]
 
-        print('******************************************')
-        print('Assumed Source Location: '+str(x0)+' , '+str(y0))
-        print('Assumed Source Concentration: '+str(c0))
-        print('--------------------------------------------------------')
-
-        print('******************************************')
-        print('Calculated Source Location: '+str(x0c)+' , '+str(y0c))
-        print('Calculated Source Concentration: '+str(c0c))
-        print('--------------------------------------------------------') 
-        print('error',c0err[it])
         if numrepeats <= 10:
+            print('******************************************')
+            print('Assumed Source Location: '+str(x0)+' , '+str(y0))
+            print('Assumed Source Concentration: '+str(c0))
+            print('--------------------------------------------------------')
+
+            print('******************************************')
+            print('Calculated Source Location: '+str(x0c)+' , '+str(y0c))
+            print('Calculated Source Concentration: '+str(c0c))
+            print('--------------------------------------------------------') 
+            print('error',c0err[it])
+ 
          
             plt.xlim((mingrid-1,maxgrid+1))
             plt.ylim((mingrid-1,maxgrid+1))
@@ -264,7 +276,10 @@ for it in range(0,numrepeats):
 if acount > 0: c0avg=c0avg/acount
 
 print ("Avg error c0",c0avg)
+print ("No Solution Count", no_sol_count)
 
+fout.write ("Avg error c0 "+ str(c0avg)+'\n')
+fout.write("No Solution Count "+ str(no_sol_count))
 if numrepeats > 1:
 
 #  plot all simulations
@@ -282,6 +297,7 @@ if numrepeats > 1:
     plt.ylabel('Number of Times')
     plt.xlabel('Percent Error')
    
+fout.close()
 plt.show()
 ##### ASSIGNMENT: Play around with the code.  Change sigma_error, the size of the grid, min_conc, max_conc, etc.
 # Can you break the code?  Do the answers give what you expect?
