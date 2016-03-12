@@ -86,7 +86,7 @@ def defconc(minconc,maxconc,minloc,maxloc,sensor_locx,sensor_locy,sigma_error):
     
 def find_solution(sens_conc,sensor_locx,sensor_locy,no_sol_count):
 
-    source_str = 'Source '+str(x0)+' '+str(y0)+' '+str(c0)+'\n'
+    source_str = 'Source X Location:'+str(x0)+' Y Location: '+str(y0)+' Concentration: '+str(c0)+'\n'
     sens_x_str = 'Sensor  X Loctions '+str(sensor_locx)+'\n'
     sens_y_str = 'Sensor Y Locations '+str(sensor_locy)+'\n'
     sens_conc_str = 'Sensor Concentrations '+str(sens_conc)+'\n'
@@ -170,7 +170,7 @@ def find_solution(sens_conc,sensor_locx,sensor_locy,no_sol_count):
 ######ASSIGNMENT
 # Comment the code, specify what input you expect, and put in code to make sure
 # Code won't break.  
-fout = open('/Users/ltriplett/Desktop/python/debug_4_each','w')
+fout = open("c:/users/richard/desktop/output/4each_25p_error",'w')
 plt.clf()
 minconc = 1.0  # Minimum Concentration, can not be less than or equal 0
 if minconc <=0:
@@ -195,6 +195,7 @@ num_sens_bus =4   # number of sensors that are on a bus (random location on stre
 num_sens_drones=4 # number of sensors that are on a drone (random location anywhere)
 numsens = num_sens_ground+num_sens_bus+num_sens_drones
 numrepeats=1000
+sigma_error=0.25
 
 if numrepeats <=0:
     sys.exit('at least 1 run')
@@ -205,7 +206,7 @@ if num_sens_drones<0:
 if num_sens_ground<0:
     sys.exit(negsens)
 
-sigma_error=0.1
+
 # define arrays
 c0err=np.zeros(numrepeats)
 for it in range(0,numrepeats):
@@ -300,4 +301,4 @@ if numrepeats > 1:
 fout.close()
 plt.show()
 ##### ASSIGNMENT: Play around with the code.  Change sigma_error, the size of the grid, min_conc, max_conc, etc.
-# Can you break the code?  Do the answers give what you expect?
+# Can you break the code?  Do the answers give what you expect
