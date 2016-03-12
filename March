@@ -33,7 +33,7 @@ def sens_loc_corner(min_loc,max_loc,num):
     return sensor_locx, sensor_locy
     
 # Module to define bus locations
-def bus(max_loc,num1,num2,minroad,maxroad):
+def bus(max_loc,num1,num2,roadgrid):
     
     for isens in range(num1,num2):
         valid=False
@@ -43,16 +43,12 @@ def bus(max_loc,num1,num2,minroad,maxroad):
            count = count + 1
            x=np.random.rand()*max_loc
            y=np.random.random()*max_loc
-        
-           if x >= minroad and x <= maxroad:
+           print(x,y,roadgrid[x,y])
+           if roadgrid[x,y] == 1:
               sensor_locx[isens]=x
               sensor_locy[isens]=y
               valid=True
-           elif y >minroad and y < maxroad:
-              sensor_locx[isens]=x
-              sensor_locy[isens]=y
-              valid=True
-           
+
     return sensor_locx,sensor_locy
   
 #Module to define locations of drones  
@@ -170,16 +166,20 @@ def find_solution(sens_conc,sensor_locx,sensor_locy,no_sol_count):
 ######ASSIGNMENT
 # Comment the code, specify what input you expect, and put in code to make sure
 # Code won't break.  
-fout = open("c:/users/richard/desktop/output/4each_25p_error",'w')
+fgrid = open("c:/users/richard/desktop/Output/grid_lat.txt",'r')
+roadgrid = np.loadtxt(fgrid)
+print(roadgrid,roadgrid.size)
+fout = open("c:/users/richard/desktop/Output/4each_25p_error",'w')
 plt.clf()
 minconc = 1.0  # Minimum Concentration, can not be less than or equal 0
 if minconc <=0:
  sys.exit('Mimimum Concentration cannot be less than or equal to 0.')   
 maxconc =100.0
-mingrid = 0.0
-maxgrid =5.0
-minroad=2.0
-maxroad=3.0
+mingrid =0
+maxgrid =int(np.sqrt(roadgrid.size)) #7
+print(maxgrid)
+#minroad=2.0
+#maxroad=3.0
 
 no_sol_count = 0
 #if round(mingrid) == round(maxgrid):
@@ -220,7 +220,7 @@ for it in range(0,numrepeats):
     if (num_sens_ground != 0): sensor_locx, sensor_locy = sens_loc_corner(mingrid,maxgrid,num_sens_ground)
 
 # Location Bus sensors
-    if (num_sens_bus != 0): sensor_locx,sensor_locy=bus(maxgrid,num_sens_ground, num_sens_ground+num_sens_bus,minroad,maxroad)
+    if (num_sens_bus != 0): sensor_locx,sensor_locy=bus(maxgrid,num_sens_ground, num_sens_ground+num_sens_bus,roadgrid)
 
 # Location Drone sensors
     if (num_sens_drones != 0): sensor_locx, sensor_locy   = sens_loc_drones(mingrid,maxgrid,num_sens_ground+num_sens_bus,numsens)
@@ -231,10 +231,8 @@ for it in range(0,numrepeats):
 # Find 4 largest concentrations
     sens_conc_new, sensor_locx_new, sensor_locy_new = find_max_conc(sens_conc, sensor_locx,sensor_locy)
 
-
-
 # Find solution
-    c0c,x0c,y0c,flag,no_sol_count = find_solution(sens_conc,sensor_locx,sensor_locy,no_sol_count)
+    c0c,x0c,y0c,flag,no_sol_count = find_solution(sens_conc_new,sensor_locx_new,sensor_locy_new,no_sol_count)
     
     if flag == True:
         c0err[it] = (c0-c0c)/c0*100
@@ -256,23 +254,25 @@ for it in range(0,numrepeats):
          
             plt.xlim((mingrid-1,maxgrid+1))
             plt.ylim((mingrid-1,maxgrid+1))
-
-            plt.axvspan(mingrid-1, maxgrid+1, color='g', lw=0, alpha=0.25)
-            plt.axvspan(minroad, maxroad,color='grey', lw=0, alpha=0.25)
-            plt.axhspan(minroad, maxroad,color='grey', lw=0, alpha=0.25)
-
+            
+            plt.imshow(roadgrid, interpolation='nearest')
+            plt.grid(True)
+            symbol_mult = 10
             for it in range(0,numsens):
-                plt.scatter(x0c,y0c,40*c0c,color='green')
-                plt.scatter(x0,y0,40.5*c0,color='red', marker = '*') 
+                plt.scatter(x0c,y0c,symbol_mult*c0c,color='green')
+                plt.scatter(x0,y0,symbol_mult*c0,color='red', marker = '*') 
    
             for it in range(0,num_sens_ground):
-                plt.scatter(sensor_locx[it],sensor_locy[it],40*sens_conc[it],color='orange', marker='s')
+                plt.scatter(sensor_locx[it],sensor_locy[it],symbol_mult*maxgrid*sens_conc[it],color='orange', marker='s')
 
             for it in range(num_sens_ground,num_sens_ground+num_sens_bus):
-                plt.scatter(sensor_locx[it],sensor_locy[it],40*sens_conc[it],color='purple')
+                plt.scatter(sensor_locx[it],sensor_locy[it],symbol_mult*maxgrid*sens_conc[it],color='purple')
             
             for it in range(num_sens_ground+num_sens_bus,numsens):
-                plt.scatter(sensor_locx[it],sensor_locy[it],40*sens_conc[it],color='black',marker='8')
+                plt.scatter(sensor_locx[it],sensor_locy[it],symbol_mult*maxgrid*sens_conc[it],color='black',marker='8')
+
+            for it in range(0,4):
+                plt.scatter(sensor_locx_new[it],sensor_locy_new[it],(symbol_mult-8)*maxgrid*sens_conc_new[it],color='yellow')
 
 if acount > 0: c0avg=c0avg/acount
 
@@ -300,5 +300,3 @@ if numrepeats > 1:
    
 fout.close()
 plt.show()
-##### ASSIGNMENT: Play around with the code.  Change sigma_error, the size of the grid, min_conc, max_conc, etc.
-# Can you break the code?  Do the answers give what you expect
