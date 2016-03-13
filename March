@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
+from matplotlib import colors
 
 # Define modules
 def find_max_conc(sens_conc,sensor_locx,sensor_locy):
@@ -43,7 +44,6 @@ def bus(max_loc,num1,num2,roadgrid):
            count = count + 1
            x=np.random.rand()*max_loc
            y=np.random.random()*max_loc
-           print(x,y,roadgrid[x,y])
            if roadgrid[x,y] == 1:
               sensor_locx[isens]=x
               sensor_locy[isens]=y
@@ -166,9 +166,9 @@ def find_solution(sens_conc,sensor_locx,sensor_locy,no_sol_count):
 ######ASSIGNMENT
 # Comment the code, specify what input you expect, and put in code to make sure
 # Code won't break.  
-fgrid = open("c:/users/richard/desktop/Output/grid_lat.txt",'r')
+fgrid = open("c:/users/richard/desktop/Output/grid_jon.txt",'r')
 roadgrid = np.loadtxt(fgrid)
-print(roadgrid,roadgrid.size)
+print(roadgrid.size)
 fout = open("c:/users/richard/desktop/Output/4each_25p_error",'w')
 plt.clf()
 minconc = 1.0  # Minimum Concentration, can not be less than or equal 0
@@ -194,7 +194,7 @@ num_sens_ground =4 # number of sensors that are on the corners of the grid
 num_sens_bus =4   # number of sensors that are on a bus (random location on streets)
 num_sens_drones=4 # number of sensors that are on a drone (random location anywhere)
 numsens = num_sens_ground+num_sens_bus+num_sens_drones
-numrepeats=1000
+numrepeats=1
 sigma_error=0.25
 
 if numrepeats <=0:
@@ -255,7 +255,8 @@ for it in range(0,numrepeats):
             plt.xlim((mingrid-1,maxgrid+1))
             plt.ylim((mingrid-1,maxgrid+1))
             
-            plt.imshow(roadgrid, interpolation='nearest')
+            terrain=colors.ListedColormap(['green', 'gray','black'])
+            plt.imshow(roadgrid, interpolation='nearest',cmap=terrain)
             plt.grid(True)
             symbol_mult = 10
             for it in range(0,numsens):
