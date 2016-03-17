@@ -1,21 +1,30 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
-import utilities
+#import utilities
 
 num_sens_ground =4 # number of sensors that are on the corners of the grid
 num_sens_bus =4   # number of sensors that are on a bus (random location on streets)
 num_sens_drones=4
 # number of sensors that are on a drone (random location anywhere)
 numsens = num_sens_ground+num_sens_bus+num_sens_drones
-numrepeats=1000
+numrepeats=1
 sigma_error=25
-name='emf'  
+name='lat'  
 if name=='jrt':
+    fgrid = open("c:/users/richard/desktop/output/grid.txt",'r')
     fout = open("c:/users/richard/desktop/output/4each_25p_error",'w')
 if name=='emf':
+    fgrid = open("C:/Users/ethan/Desktop/python_out/grid.txt",'r')
     fout = open("C:/Users/ethan/Desktop/python_out/n8o_all_error",'w')
-    
+if name=='lat':
+    fgrid = open("/Users/ltriplett/Desktop/python/grid.txt",'r')
+    fout = open("/Users/ltriplett/Desktop/python/4each_25p_error",'w')
+ 
+roadgrid = np .flipud(np.loadtxt(fgrid))
+biy,bix = np.where((roadgrid)==2)
+buildings = zip(bix,biy)
+
 # Define modules
 
 def find_max_conc(sens_conc,sensor_locx,sensor_locy):
@@ -48,7 +57,7 @@ def sens_loc_corner(min_loc,max_loc,num):
     return sensor_locx, sensor_locy
     
 # Module to define bus locations
-def bus(max_loc,num1,num2,minroad,maxroad):
+def bus(max_loc,num1,num2,roadgrid):
     
     for isens in range(num1,num2):
         valid=False
@@ -58,16 +67,12 @@ def bus(max_loc,num1,num2,minroad,maxroad):
            count = count + 1
            x=np.random.rand()*max_loc
            y=np.random.random()*max_loc
-        
-           if x >= minroad and x <= maxroad:
+           print(x,y,roadgrid[x,y])
+           if roadgrid[x,y] == 1:
               sensor_locx[isens]=x
               sensor_locy[isens]=y
               valid=True
-           elif y >minroad and y < maxroad:
-              sensor_locx[isens]=x
-              sensor_locy[isens]=y
-              valid=True
-           
+
     return sensor_locx,sensor_locy
   
 #Module to define locations of drones  
@@ -192,10 +197,7 @@ if minconc <=0:
  sys.exit('Mimimum Concentration cannot be less than or equal to 0.')   
 maxconc =100.0
 mingrid = 0.0
-maxgrid =5.0
-minroad=2.0
-maxroad=3.0
-
+maxgrid =int(np.sqrt(roadgrid.size))
 no_sol_count = 0
 #if round(mingrid) == round(maxgrid):
 #    sys.exit('the Grid is too small, please change mingrid and maxgrid')
@@ -230,7 +232,7 @@ for it in range(0,numrepeats):
     if (num_sens_ground != 0): sensor_locx, sensor_locy = sens_loc_corner(mingrid,maxgrid,num_sens_ground)
 
 # Location Bus sensors
-    if (num_sens_bus != 0): sensor_locx,sensor_locy=bus(maxgrid,num_sens_ground, num_sens_ground+num_sens_bus,minroad,maxroad)
+    if (num_sens_bus != 0): sensor_locx,sensor_locy=bus(maxgrid,num_sens_ground, num_sens_ground+num_sens_bus,roadgrid)
 
 # Location Drone sensors
     if (num_sens_drones != 0): sensor_locx, sensor_locy   = sens_loc_drones(mingrid,maxgrid,num_sens_ground+num_sens_bus,numsens)
@@ -240,8 +242,6 @@ for it in range(0,numrepeats):
     
 # Find 4 largest concentrations
     sens_conc_new, sensor_locx_new, sensor_locy_new = find_max_conc(sens_conc, sensor_locx,sensor_locy)
-
-
 
 # Find solution
     c0c,x0c,y0c,flag,no_sol_count = find_solution(sens_conc,sensor_locx,sensor_locy,no_sol_count)
@@ -266,23 +266,25 @@ for it in range(0,numrepeats):
          
             plt.xlim((mingrid-1,maxgrid+1))
             plt.ylim((mingrid-1,maxgrid+1))
-
-            plt.axvspan(mingrid-1, maxgrid+1, color='g', lw=0, alpha=0.25)
-            plt.axvspan(minroad, maxroad,color='grey', lw=0, alpha=0.25)
-            plt.axhspan(minroad, maxroad,color='grey', lw=0, alpha=0.25)
-
+            
+            plt.imshow(roadgrid, interpolation='nearest')
+            plt.grid(True)
+            symbol_mult = 10
             for it in range(0,numsens):
-                plt.scatter(x0c,y0c,40*c0c,color='green')
-                plt.scatter(x0,y0,40.5*c0,color='red', marker = '*') 
+                plt.scatter(x0c,y0c,symbol_mult*c0c,color='green')
+                plt.scatter(x0,y0,symbol_mult*c0,color='red', marker = '*') 
    
             for it in range(0,num_sens_ground):
-                plt.scatter(sensor_locx[it],sensor_locy[it],40*sens_conc[it],color='orange', marker='s')
+                plt.scatter(sensor_locx[it],sensor_locy[it],symbol_mult*maxgrid*sens_conc[it],color='orange', marker='s')
 
             for it in range(num_sens_ground,num_sens_ground+num_sens_bus):
-                plt.scatter(sensor_locx[it],sensor_locy[it],40*sens_conc[it],color='purple')
+                plt.scatter(sensor_locx[it],sensor_locy[it],symbol_mult*maxgrid*sens_conc[it],color='purple')
             
             for it in range(num_sens_ground+num_sens_bus,numsens):
-                plt.scatter(sensor_locx[it],sensor_locy[it],40*sens_conc[it],color='black',marker='8')
+                plt.scatter(sensor_locx[it],sensor_locy[it],symbol_mult*maxgrid*sens_conc[it],color='black',marker='8')
+
+            for it in range(0,4):
+                plt.scatter(sensor_locx_new[it],sensor_locy_new[it],(symbol_mult-8)*maxgrid*sens_conc_new[it],color='yellow')
 
 if acount > 0: c0avg=c0avg/acount
 
