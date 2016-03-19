@@ -2,15 +2,22 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 from matplotlib import colors
-#import utilities
+from utilities import *
 
-num_sens_ground =4 # number of sensors that are on the corners of the grid
+#User Variables
+
+num_sens_ground =5 # number of sensors that are on the corners of the grid
 num_sens_bus =4   # number of sensors that are on a bus (random location on streets)
-num_sens_drones=4
-# number of sensors that are on a drone (random location anywhere)
-numsens = num_sens_ground+num_sens_bus+num_sens_drones
-numrepeats=1
-sigma_error=25
+num_sens_drones=4 # number of sensors that are on a drone (random location anywhere)
+
+minconc = 1.0  # Minimum Concentration, can not be less than or equal 0
+
+maxconc =100.0
+mingrid = 0.0
+
+numrepeats=2
+sigma_error=0
+
 name='lat'  
 if name=='jrt':
     fgrid = open("c:/users/richard/desktop/output/grid.txt",'r')
@@ -22,193 +29,17 @@ if name=='lat':
     fgrid = open("/Users/ltriplett/Desktop/python/grid.txt",'r')
     fout = open("/Users/ltriplett/Desktop/python/4each_25p_error",'w')
  
-roadgrid = np .flipud(np.loadtxt(fgrid))
-biy,bix = np.where((roadgrid)==2)
-buildings = zip(bix,biy)
+numsens = num_sens_ground+num_sens_bus+num_sens_drones
+roadgrid_all = np .flipud(np.loadtxt(fgrid))
+roadgrid = roadgrid_all[:-1]
+maxgrid =int(np.sqrt(roadgrid.size))
+maxgrid_r = float(maxgrid)
 
-# Define modules
+# input error checking
 
-def find_max_conc(sens_conc,sensor_locx,sensor_locy):
-
-  indices = np.argsort(sens_conc)
-  sens_conc_new = sens_conc[indices]
-  sens_locx_new = sensor_locx[indices]
-  sens_locy_new = sensor_locy[indices]
-  return sens_conc_new[-4:], sens_locx_new[-4:], sens_locy_new[-4:]
-  
-# Module to define locations of ground sensors.
-def sens_loc_corner(min_loc,max_loc,num):
-    
-    if num >= 1:
-        sensor_locx[0]=min_loc
-        sensor_locy[0]=max_loc
-    if num >= 2:
-        sensor_locx[1]=max_loc
-        sensor_locy[1]=min_loc
-    if num >= 3:
-        sensor_locx[2]=max_loc/2 #*0.99
-        sensor_locy[2]=max_loc/2 #*0.99
-    if num >= 4:
-        sensor_locx[3]=min_loc #max_loc
-        sensor_locy[3]=min_loc #max_loc
-        if num == 0:
-            print 'Sorry, You cannot solve with Zero sensors!'
-    if num < 0:
-        print 'Sorry, You cannot have Negative sensors!'
-    return sensor_locx, sensor_locy
-    
-# Module to define bus locations
-def bus(max_loc,num1,num2,roadgrid):
-    
-    for isens in range(num1,num2):
-        valid=False
-        count = 0
-        while (valid == False and count < 10):
-#       To make sure it doesn't get into an infinite loop
-           count = count + 1
-           x=np.random.rand()*max_loc
-           y=np.random.random()*max_loc
-           print(x,y,roadgrid[x,y])
-           if roadgrid[x,y] == 1:
-              sensor_locx[isens]=x
-              sensor_locy[isens]=y
-              valid=True
-
-    return sensor_locx,sensor_locy
-  
-#Module to define locations of drones  
-def sens_loc_drones(min_loc,max_loc,num1,num2):
-    for isens in range(num1,num2):
-   
-        sensor_locx[isens]= np.random.uniform(min_loc,max_loc)
-        sensor_locy[isens]= np.random.uniform(min_loc,max_loc)
-    
-    return sensor_locx,sensor_locy   
-  
-# Module to define source location, source concentration, sensor concentrations, + uncertainty
-
-def defconc(minconc,maxconc,minloc,maxloc,sensor_locx,sensor_locy,sigma_error):
-    
-    source_conc = np.random.uniform(minconc,maxconc)
-    source_locx=np.random.uniform(minloc,maxloc)
-    source_locy=np.random.uniform(minloc,maxloc)
-   
-    sensor_conc = source_conc/((source_locx-sensor_locx)**2+(source_locy-sensor_locy)**2)
-    
-    if (sigma_error != 0):
-        error=np.random.normal(0,sigma_error/100.0,numsens)
-    else:
-        error = np.zeros(numsens)
-        
-    sensor_conc = sensor_conc*(1.0-error)
-    
-    return source_conc,source_locx, source_locy, sensor_conc
-
-    
-def find_solution(sens_conc,sensor_locx,sensor_locy,no_sol_count):
-
-    source_str = 'Source X Location:'+str(x0)+' Y Location: '+str(y0)+' Concentration: '+str(c0)+'\n'
-    sens_x_str = 'Sensor  X Loctions '+str(sensor_locx)+'\n'
-    sens_y_str = 'Sensor Y Locations '+str(sensor_locy)+'\n'
-    sens_conc_str = 'Sensor Concentrations '+str(sens_conc)+'\n'
-   
-    A= sens_conc[0]-sens_conc[1]
-    B= -2*sensor_locx[0]*sens_conc[0]+2*sensor_locx[1]*sens_conc[1]
-    C= -2*sensor_locy[0]*sens_conc[0]+2*sensor_locy[1]*sens_conc[1]
-    D= sens_conc[0]*(sensor_locx[0]**2+sensor_locy[0]**2)-sens_conc[1]*(sensor_locx[1]**2+sensor_locy[1]**2)
-
-    E= sens_conc[2]-sens_conc[3]
-    F= -2*sensor_locx[2]*sens_conc[2]+2*sensor_locx[3]*sens_conc[3]
-    G= -2*sensor_locy[2]*sens_conc[2]+2*sensor_locy[3]*sens_conc[3]
-    H= sens_conc[2]*(sensor_locx[2]**2+sensor_locy[2]**2)-sens_conc[3]*(sensor_locx[3]**2+sensor_locy[3]**2)
-
-    I= sens_conc[1]-sens_conc[3]
-    J= -2*sensor_locx[1]*sens_conc[1]+2*sensor_locx[3]*sens_conc[3]
-    K= -2*sensor_locy[1]*sens_conc[1]+2*sensor_locy[3]*sens_conc[3]
-    L= sens_conc[1]*(sensor_locx[1]**2+sensor_locy[1]**2)-sens_conc[3]*(sensor_locx[3]**2+sensor_locy[3]**2)
-
-    M = B*I-A*J
-    N = B*E-A*F
-
-    num = N*A*L-N*I*D-M*A*H+M*D*E
-    den = -C*E*M+A*G*M+N*I*C-N*A*K
-    if (den != 0):
-        y0c = (num)/(den)
-        x0c = (A*H-D*E-(C*E-A*G)*y0c)/(B*E-A*F)
-        c0c = sens_conc[0]*((sensor_locx[0]-x0c)**2 + (sensor_locy[0]-y0)**2)
-        flag = True
-    else:
-        fout.write('no soln \n')
-        fout.write(source_str)
-        fout.write(sens_x_str)
-        fout.write(sens_y_str)
-        fout.write(sens_conc_str)
-        c0c = float('nan')
-        x0c = float('nan')
-        y0c = float('nan')
-        flag = False
-        no_sol_count = no_sol_count + 1
-    if x0c < mingrid or x0c > maxgrid:
-        fout.write('no soln not in x grid \n')
-        fout.write(source_str)
-        fout.write(sens_x_str)
-        fout.write(sens_y_str)
-        fout.write(sens_conc_str)
-        c0c = float('nan')
-        x0c = float('nan')
-        y0c = float('nan')
-        flag = False
-        no_sol_count = no_sol_count + 1
-    if y0c < mingrid or y0c > maxgrid:
-        fout.write('no soln not in y grid \n')
-        fout.write(source_str)
-        fout.write(sens_x_str)
-        fout.write(sens_y_str)
-        fout.write(sens_conc_str)
-        c0c = float('nan')
-        x0c = float('nan')
-        y0c = float('nan')
-        flag = False
-        no_sol_count = no_sol_count + 1
-    if c0c < minconc or y0c > maxconc:
-        fout.write('no soln conc less than 0 \n')
-        fout.write(source_str)
-        fout.write(sens_x_str)
-        fout.write(sens_y_str)
-        fout.write(sens_conc_str)
-        c0c = float('nan')
-        x0c = float('nan')
-        y0c = float('nan')
-        flag = False
-        no_sol_count = no_sol_count + 1
-    
-    return c0c,x0c,y0c,flag,no_sol_count 
-
-# Main Program
-
-#Define constants
-
-######ASSIGNMENT
-# Comment the code, specify what input you expect, and put in code to make sure
-# Code won't break.
-
-plt.clf()
-minconc = 1.0  # Minimum Concentration, can not be less than or equal 0
 if minconc <=0:
  sys.exit('Mimimum Concentration cannot be less than or equal to 0.')   
-maxconc =100.0
-mingrid = 0.0
-maxgrid =int(np.sqrt(roadgrid.size))
-no_sol_count = 0
-#if round(mingrid) == round(maxgrid):
-#    sys.exit('the Grid is too small, please change mingrid and maxgrid')
-
-
-######ASSIGNMENT
-
-#What error do you get if you use a different combination of sensors?
 negsens='Cannot have negative sensors!'
-
 
 if numrepeats <=0:
     sys.exit('at least 1 run')
@@ -218,7 +49,9 @@ if num_sens_drones<0:
     sys.exit(negsens)
 if num_sens_ground<0:
     sys.exit(negsens)
-
+    
+#initialize variables
+no_sol_count = 0
 
 # define arrays
 c0err=np.zeros(numrepeats)
@@ -229,23 +62,35 @@ for it in range(0,numrepeats):
     sensor_locx=np.zeros(numsens)
     sensor_locy=np.zeros(numsens)
 
-# Location Corner sensors
-    if (num_sens_ground != 0): sensor_locx, sensor_locy = sens_loc_corner(mingrid,maxgrid,num_sens_ground)
+#   Location Corner sensors
+    if (num_sens_ground != 0): sensor_locx, sensor_locy = sens_loc_corner(mingrid,maxgrid_r,num_sens_ground,sensor_locx,sensor_locy)
 
-# Location Bus sensors
-    if (num_sens_bus != 0): sensor_locx,sensor_locy=bus(maxgrid,num_sens_ground, num_sens_ground+num_sens_bus,roadgrid)
-
-# Location Drone sensors
-    if (num_sens_drones != 0): sensor_locx, sensor_locy   = sens_loc_drones(mingrid,maxgrid,num_sens_ground+num_sens_bus,numsens)
-
-# Calculated concentration at sensors
-    c0,x0,y0,sens_conc = defconc(minconc,maxconc,mingrid,maxgrid,sensor_locx,sensor_locy,sigma_error)
+    print('sensx c',sensor_locx)
+    print('sensy c',sensor_locy)
     
-# Find 4 largest concentrations
+#   Location Bus sensors
+    if (num_sens_bus != 0): sensor_locx,sensor_locy=bus(mingrid,maxgrid,num_sens_ground, num_sens_ground+num_sens_bus,roadgrid,sensor_locx,sensor_locy)
+
+    print('sensx_b',sensor_locx)
+    print('sensy_b',sensor_locy)
+    
+#   Location Drone sensors
+    if (num_sens_drones != 0): sensor_locx, sensor_locy   = sens_loc_drones(mingrid,maxgrid_r,num_sens_ground+num_sens_bus+1,numsens,sensor_locx,sensor_locy)
+
+    print('sensx',sensor_locx)
+    print('sensy',sensor_locy)
+
+#   Calculated concentration at sensors
+    c0,x0,y0,sens_conc = defconc(minconc,maxconc,mingrid,maxgrid_r,numsens,sensor_locx,sensor_locy,sigma_error)
+    
+    print('sensc',sens_conc)
+#    print('sensor',sensor_locx,sensor_locy,sens_conc)
+#   Find 4 largest concentrations
     sens_conc_new, sensor_locx_new, sensor_locy_new = find_max_conc(sens_conc, sensor_locx,sensor_locy)
 
-# Find solution
-    c0c,x0c,y0c,flag,no_sol_count = find_solution(sens_conc,sensor_locx,sensor_locy,no_sol_count)
+    print('new',sensor_locx_new)
+#   Find solution
+    c0c,x0c,y0c,flag,no_sol_count = find_solution(fout,x0,y0,c0,minconc,maxconc,mingrid,maxgrid,sens_conc,sensor_locx,sensor_locy,no_sol_count)
     
     if flag == True:
         c0err[it] = (c0-c0c)/c0*100
@@ -264,30 +109,38 @@ for it in range(0,numrepeats):
             print('--------------------------------------------------------') 
             print('error',c0err[it])
  
-         
+            plt.figure()
             plt.xlim((mingrid-1,maxgrid+1))
             plt.ylim((mingrid-1,maxgrid+1))
             terrain=colors.ListedColormap(['green', 'gray','black'])
-            roadgrid = np.flipud(roadgrid)
-            plt.imshow(roadgrid, interpolation='nearest',cmap=terrain)
-            plt.grid(True)
-            symbol_mult = 10
-            for it in range(0,numsens):
-                plt.scatter(x0c,y0c,symbol_mult*c0c,color='green')
-                plt.scatter(x0,y0,symbol_mult*c0,color='red', marker = '*') 
+#            roadgrid = np.flipud(roadgrid)
+#            roadgrid = np.fliplr(roadgrid)
+#            roadgrid = roadgrid + 0.5
+            plt.imshow(roadgrid_all, interpolation='nearest',cmap=terrain)
+#            plt.grid(True)
+            symbol_mult = 70
+
+            plt.scatter(x0c,y0c,symbol_mult,color='aqua', label='Calc')
+            plt.scatter(x0,y0,symbol_mult,color='red', marker = '*', label='Orig') 
    
-            for it in range(0,num_sens_ground):
-                plt.scatter(sensor_locx[it],sensor_locy[it],symbol_mult*maxgrid*sens_conc[it],color='orange', marker='s')
+            it0 = 0
+            it1 = num_sens_ground
+            plt.scatter(sensor_locx[it0:it1],sensor_locy[it0:it1],symbol_mult,color='orange', marker='s',label='ground')
 
-            for it in range(num_sens_ground,num_sens_ground+num_sens_bus):
-                plt.scatter(sensor_locx[it],sensor_locy[it],symbol_mult*maxgrid*sens_conc[it],color='purple')
+            it0 = it1
+            it1 = num_sens_ground+num_sens_bus
+            plt.scatter(sensor_locx[it0:it1],sensor_locy[it0:it1],symbol_mult,color='magenta',label='bus')
             
-            for it in range(num_sens_ground+num_sens_bus,numsens):
-                plt.scatter(sensor_locx[it],sensor_locy[it],symbol_mult*maxgrid*sens_conc[it],color='black',marker='8')
+            it0 = it1
+            it1 = numsens
+            plt.scatter(sensor_locx[it0:it1],sensor_locy[it0:it1],symbol_mult,color='black',marker='^', label='drone')
 
-            for it in range(0,4):
-                plt.scatter(sensor_locx_new[it],sensor_locy_new[it],(symbol_mult-8)*maxgrid*sens_conc_new[it],color='yellow')
+            it0 = 0
+            it1=4
+            plt.scatter(sensor_locx_new[it0:it1],sensor_locy_new[it0:it1],(symbol_mult*0.5),color='yellow')
 
+            plt.legend(bbox_to_anchor=(1.05,1),loc=2,borderaxespad=0,scatterpoints=1)
+            
 if acount > 0: c0avg=c0avg/acount
 
 print ("Avg error c0",c0avg)
@@ -298,6 +151,7 @@ fout.write("No Solution Count "+ str(no_sol_count))
 if numrepeats > 1:
 
 #  plot all simulations
+    plt.figure()
     plt.hist(c0err,color='g',bins=20)
 
     plt.ylabel('Number of Times')
@@ -306,7 +160,6 @@ if numrepeats > 1:
  
 #  zoom in   
     plt.ylim(0,200)
-#    plt.hist(c0err,color='r',bins=20,range=[-1000,1000])
     plt.hist(c0err,color='r',bins=20)
     
     plt.ylabel('Number of Times')
@@ -314,5 +167,4 @@ if numrepeats > 1:
    
 fout.close()
 plt.show()
-##### ASSIGNMENT: Play around with the code.  Change sigma_error, the size of the grid, min_conc, max_conc, etc.
-# Can you break the code?  Do the answers give what you expect
+
