@@ -16,11 +16,14 @@ def sens_loc_corner(min_loc,max_loc,num, sensor_locx,sensor_locy):
         sensor_locx[1]=max_loc
         sensor_locy[1]=min_loc
     if num >= 3:
-        sensor_locx[2]=max_loc/2 #*0.99
-        sensor_locy[2]=max_loc/2 #*0.99
+        sensor_locx[2]=max_loc/2.0
+        sensor_locy[2]=max_loc/2.0
     if num >= 4:
-        sensor_locx[3]=min_loc #max_loc
-        sensor_locy[3]=min_loc #max_loc
+        sensor_locx[3]=min_loc 
+        sensor_locy[3]=min_loc 
+    if num >= 5:
+        sensor_locx[4]=max_loc 
+        sensor_locy[4]=max_loc 
         if num == 0:
             print 'Sorry, You cannot solve with Zero sensors!'
     if num < 0:
@@ -28,20 +31,22 @@ def sens_loc_corner(min_loc,max_loc,num, sensor_locx,sensor_locy):
     return sensor_locx, sensor_locy
     
 # Module to define bus locations
-def bus(max_loc,num1,num2,roadgrid,sensor_locx,sensor_locy):
+
+def bus(min_loc,max_loc,num1,num2,roadgrid,sensor_locx,sensor_locy):
     import numpy as np    
     for isens in range(num1,num2):
         valid=False
         count = 0
-        while (valid == False and count < 10):
+        while (valid == False and count < 20):
 #       To make sure it doesn't get into an infinite loop
            count = count + 1
-           x=np.random.rand()*max_loc
-           y=np.random.random()*max_loc
-           print(x,y,roadgrid[x,y])
-           if roadgrid[x,y] == 1:
+           x=int(np.random.randint(min_loc,max_loc))
+           y=int(np.random.randint(min_loc,max_loc))
+
+           if roadgrid[y,x] == 1:
               sensor_locx[isens]=x
               sensor_locy[isens]=y
+              
               valid=True
 
     return sensor_locx,sensor_locy
@@ -51,8 +56,8 @@ def sens_loc_drones(min_loc,max_loc,num1,num2,sensor_locx,sensor_locy):
     import numpy as np  
     for isens in range(num1,num2):
    
-        sensor_locx[isens]= np.random.uniform(min_loc,max_loc)
-        sensor_locy[isens]= np.random.uniform(min_loc,max_loc)
+        sensor_locx[isens]= np.random.randint(min_loc,max_loc)
+        sensor_locy[isens]= np.random.randint(min_loc,max_loc)
     
     return sensor_locx,sensor_locy   
   
@@ -60,9 +65,9 @@ def sens_loc_drones(min_loc,max_loc,num1,num2,sensor_locx,sensor_locy):
 
 def defconc(minconc,maxconc,minloc,maxloc,numsens,sensor_locx,sensor_locy,sigma_error):
     import numpy as np 
-    source_conc = np.random.uniform(minconc,maxconc)
-    source_locx=np.random.uniform(minloc,maxloc)
-    source_locy=np.random.uniform(minloc,maxloc)
+    source_conc = np.random.randint(minconc,maxconc)
+    source_locx=np.random.randint(minloc,maxloc)
+    source_locy=np.random.randint(minloc,maxloc)
    
     sensor_conc = source_conc/((source_locx-sensor_locx)**2+(source_locy-sensor_locy)**2)
     
@@ -82,7 +87,7 @@ def find_solution(fout,x0,y0,c0,minconc,maxconc,mingrid,maxgrid,sens_conc,sensor
     sens_x_str = 'Sensor  X Loctions '+str(sensor_locx)+'\n'
     sens_y_str = 'Sensor Y Locations '+str(sensor_locy)+'\n'
     sens_conc_str = 'Sensor Concentrations '+str(sens_conc)+'\n'
-   
+
     A= sens_conc[0]-sens_conc[1]
     B= -2*sensor_locx[0]*sens_conc[0]+2*sensor_locx[1]*sens_conc[1]
     C= -2*sensor_locy[0]*sens_conc[0]+2*sensor_locy[1]*sens_conc[1]
@@ -152,5 +157,4 @@ def find_solution(fout,x0,y0,c0,minconc,maxconc,mingrid,maxgrid,sens_conc,sensor
         y0c = float('nan')
         flag = False
         no_sol_count = no_sol_count + 1
-    
     return c0c,x0c,y0c,flag,no_sol_count 
