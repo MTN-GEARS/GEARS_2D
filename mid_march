@@ -6,21 +6,21 @@ from utilities import *
 
 #User Variables
 
-num_sens_ground =5 # number of sensors that are on the corners of the grid
+num_sens_ground =4 # number of sensors that are on the corners of the grid
 num_sens_bus =4   # number of sensors that are on a bus (random location on streets)
 num_sens_drones=4 # number of sensors that are on a drone (random location anywhere)
 
 minconc = 1.0  # Minimum Concentration, can not be less than or equal 0
 
-maxconc =100.0
+maxconc =100
 mingrid = 0.0
 
-numrepeats=2
-sigma_error=0
+numrepeats=10000
+sigma_error=0.5
 
-name='lat'  
-if name=='jrt':
-    fgrid = open("c:/users/richard/desktop/output/grid.txt",'r')
+name='jon'  
+if name=='jon':
+    fgrid = open("c:/users/richard/desktop/output/grid_jon.txt",'r')
     fout = open("c:/users/richard/desktop/output/4each_25p_error",'w')
 if name=='emf':
     fgrid = open("C:/Users/ethan/Desktop/python_out/grid.txt",'r')
@@ -64,31 +64,20 @@ for it in range(0,numrepeats):
 
 #   Location Corner sensors
     if (num_sens_ground != 0): sensor_locx, sensor_locy = sens_loc_corner(mingrid,maxgrid_r,num_sens_ground,sensor_locx,sensor_locy)
-
-    print('sensx c',sensor_locx)
-    print('sensy c',sensor_locy)
     
 #   Location Bus sensors
     if (num_sens_bus != 0): sensor_locx,sensor_locy=bus(mingrid,maxgrid,num_sens_ground, num_sens_ground+num_sens_bus,roadgrid,sensor_locx,sensor_locy)
 
-    print('sensx_b',sensor_locx)
-    print('sensy_b',sensor_locy)
-    
 #   Location Drone sensors
     if (num_sens_drones != 0): sensor_locx, sensor_locy   = sens_loc_drones(mingrid,maxgrid_r,num_sens_ground+num_sens_bus+1,numsens,sensor_locx,sensor_locy)
-
-    print('sensx',sensor_locx)
-    print('sensy',sensor_locy)
 
 #   Calculated concentration at sensors
     c0,x0,y0,sens_conc = defconc(minconc,maxconc,mingrid,maxgrid_r,numsens,sensor_locx,sensor_locy,sigma_error)
     
-    print('sensc',sens_conc)
 #    print('sensor',sensor_locx,sensor_locy,sens_conc)
 #   Find 4 largest concentrations
     sens_conc_new, sensor_locx_new, sensor_locy_new = find_max_conc(sens_conc, sensor_locx,sensor_locy)
-
-    print('new',sensor_locx_new)
+    
 #   Find solution
     c0c,x0c,y0c,flag,no_sol_count = find_solution(fout,x0,y0,c0,minconc,maxconc,mingrid,maxgrid,sens_conc,sensor_locx,sensor_locy,no_sol_count)
     
@@ -113,15 +102,11 @@ for it in range(0,numrepeats):
             plt.xlim((mingrid-1,maxgrid+1))
             plt.ylim((mingrid-1,maxgrid+1))
             terrain=colors.ListedColormap(['green', 'gray','black'])
-#            roadgrid = np.flipud(roadgrid)
-#            roadgrid = np.fliplr(roadgrid)
-#            roadgrid = roadgrid + 0.5
             plt.imshow(roadgrid_all, interpolation='nearest',cmap=terrain)
-#            plt.grid(True)
             symbol_mult = 70
 
-            plt.scatter(x0c,y0c,symbol_mult,color='aqua', label='Calc')
-            plt.scatter(x0,y0,symbol_mult,color='red', marker = '*', label='Orig') 
+            plt.scatter(x0c,y0c,symbol_mult,color='limegreen', label='Calc')
+            plt.scatter(x0,y0,symbol_mult,color='lime', marker = '*', label='Orig') 
    
             it0 = 0
             it1 = num_sens_ground
@@ -129,15 +114,15 @@ for it in range(0,numrepeats):
 
             it0 = it1
             it1 = num_sens_ground+num_sens_bus
-            plt.scatter(sensor_locx[it0:it1],sensor_locy[it0:it1],symbol_mult,color='magenta',label='bus')
+            plt.scatter(sensor_locx[it0:it1],sensor_locy[it0:it1],symbol_mult,color='yellow',label='bus')
             
             it0 = it1
             it1 = numsens
-            plt.scatter(sensor_locx[it0:it1],sensor_locy[it0:it1],symbol_mult,color='black',marker='^', label='drone')
+            plt.scatter(sensor_locx[it0:it1],sensor_locy[it0:it1],symbol_mult,color='grey',marker='^', label='drone')
 
             it0 = 0
             it1=4
-            plt.scatter(sensor_locx_new[it0:it1],sensor_locy_new[it0:it1],(symbol_mult*0.5),color='yellow')
+            plt.scatter(sensor_locx_new[it0:it1],sensor_locy_new[it0:it1],(symbol_mult*0.5),color='magenta')
 
             plt.legend(bbox_to_anchor=(1.05,1),loc=2,borderaxespad=0,scatterpoints=1)
             
@@ -152,7 +137,7 @@ if numrepeats > 1:
 
 #  plot all simulations
     plt.figure()
-    plt.hist(c0err,color='g',bins=20)
+    plt.hist(c0err,color='g',range=(min(c0err),max(c0err)),bins=20)
 
     plt.ylabel('Number of Times')
     plt.xlabel('Percent Error')
@@ -160,7 +145,8 @@ if numrepeats > 1:
  
 #  zoom in   
     plt.ylim(0,200)
-    plt.hist(c0err,color='r',bins=20)
+    plt.xlim(-200,200)
+    plt.hist(c0err,color='r',range=(min(c0err),max(c0err)),bins=20)
     
     plt.ylabel('Number of Times')
     plt.xlabel('Percent Error')
