@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
+from matplotlib import colors
 #import utilities
 
 num_sens_ground =4 # number of sensors that are on the corners of the grid
@@ -266,8 +267,9 @@ for it in range(0,numrepeats):
          
             plt.xlim((mingrid-1,maxgrid+1))
             plt.ylim((mingrid-1,maxgrid+1))
-            
-            plt.imshow(roadgrid, interpolation='nearest')
+            terrain=colors.ListedColormap(['green', 'gray','black'])
+            roadgrid = np.flipud(roadgrid)
+            plt.imshow(roadgrid, interpolation='nearest',cmap=terrain)
             plt.grid(True)
             symbol_mult = 10
             for it in range(0,numsens):
