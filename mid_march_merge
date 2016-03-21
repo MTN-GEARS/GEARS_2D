@@ -1,0 +1,259 @@
+import numpy as np
+import math
+import matplotlib.pyplot as plt
+import sys
+from matplotlib import colors
+from utilities import *
+
+#User Variables
+
+num_sens_ground =4 # number of sensors that are on the corners of the grid
+num_sens_bus =4   # number of sensors that are on a bus (random location on streets)
+num_sens_drones=4 # number of sensors that are on a drone (random location anywhere)
+
+num_sens_ground =4 # number of sensors that are on the corners of the grid
+num_sens_bus =4   # number of sensors that are on a bus (random location on streets)
+num_sens_drones=4 # number of sensors that are on a drone (random location anywhere)
+#Costs of individual sensors
+Drone_cost=300
+Bus_cost=200
+Ground_cost=150
+
+cost=(num_sens_drones*Drone_cost)+(num_sens_bus*Bus_cost)+(num_sens_ground*Ground_cost)
+
+print"$$$$$$$$$$$$$$$$$$$$$$$$$$$$"
+print"        Cost = "+str(cost)
+print"$$$$$$$$$$$$$$$$$$$$$$$$$$$$"
+
+numsens = num_sens_ground+num_sens_bus+num_sens_drones
+
+minconc = 1.0  # Minimum Concentration, can not be less than or equal 0
+
+maxconc =100
+mingrid = 0.0
+
+numrepeats=10
+sigma_error=0
+
+## Assignmnet: make a string that describes your run and adapt your output file.
+
+name='school'
+
+fname = name+'_'+str(num_sens_ground)+'_'+str(num_sens_bus)+'_'+str(num_sens_drones)+'_'+str(numrepeats)
+print("name",fname)
+
+  
+if name=='jon':
+    path='c:/users/richard/desktop/output'
+    
+if name=='emf':
+    path='C:/Users/ethan/Desktop/python_out/'
+    
+if name=='lat':
+    path='/Users/ltriplett/Desktop/python'
+if name=='school':
+    path='/Users/student/'
+
+fgrid=open(path+'grid.txt','r')    
+fout = open(path+fname,'w')
+
+ 
+numsens = num_sens_ground+num_sens_bus+num_sens_drones
+roadgrid_all = np .flipud(np.loadtxt(fgrid))
+roadgrid = roadgrid_all[:-1]
+maxgrid =int(np.sqrt(roadgrid.size))
+maxgrid_r = float(maxgrid)
+
+# input error checking
+
+if minconc <=0:
+ sys.exit('Mimimum Concentration cannot be less than or equal to 0.')   
+negsens='Cannot have negative sensors!'
+
+if numrepeats <=0 or num_sens_bus<0 or num_sens_drones<0 or num_sens_ground<0:
+    sys.exit('You have negative sensors, or you ran it 0 times')
+    
+#initialize variables
+no_sol_count = 0
+
+# define arrays
+
+c0errconc=np.zeros(numrepeats)
+c0errloc=np.zeros(numrepeats)
+for it in range(0,numrepeats):
+    acount = 0
+    c0avg=0
+    c0errconc[it] = 0
+    c0errloc[it]=0
+    sens_conc = np.zeros(numsens)
+    sensor_locx=np.zeros(numsens)
+    sensor_locy=np.zeros(numsens)
+    sens_conc_new = np.zeros(4)
+    sensor_locx_new = np.zeros(4)
+    sensor_locy_new = np.zeros(4)
+    
+
+   
+#   Location Corner sensors
+    if (num_sens_ground != 0): sensor_locx, sensor_locy = sens_loc_corner(mingrid,maxgrid,num_sens_ground,sensor_locx,sensor_locy)
+    
+#   Location Bus sensors
+    if (num_sens_bus != 0): sensor_locx,sensor_locy=bus(mingrid,maxgrid,num_sens_ground, num_sens_ground+num_sens_bus,roadgrid,sensor_locx,sensor_locy)
+
+#   Location Drone sensors
+    if (num_sens_drones != 0): sensor_locx, sensor_locy   = sens_loc_drones(mingrid,maxgrid,num_sens_ground+num_sens_bus,numsens,sensor_locx,sensor_locy)
+
+#   Calculated concentration at sensors
+    c0,x0,y0,sens_conc = defconc(minconc,maxconc,mingrid,maxgrid,numsens,sensor_locx,sensor_locy,sigma_error)
+    
+#    print('sensor',sensor_locx,sensor_locy,sens_conc)
+#   Find 4 largest concentrations
+    sens_conc_new, sensor_locx_new, sensor_locy_new = find_max_conc(sens_conc,sensor_locx,sensor_locy)
+    
+#   Find solution
+    c0c,x0c,y0c,flag,no_sol_count = find_solution(fout,x0,y0,c0,minconc,maxconc,mingrid,maxgrid,sens_conc,sensor_locx,sensor_locy,no_sol_count)
+
+## Assignment: Add code to calculate error in distance.
+
+    if flag == True:
+        c0errconc[it] = (c0-c0c)/c0*100
+        c0errloc[it] = math.sqrt((((x0-x0c)/x0*100)**2 +( (y0-y0c)/y0*100)**2))
+        
+##MAKE IT RAIN
+##MAKE IT RAIN
+##MAKE IT RAIN
+##MAKE IT RAIN
+##MAKE IT RAIN
+##MAKE IT RAIN
+##MAKE IT RAIN
+##MAKE IT RAIN
+##MAKE IT RAIN
+##MAKE IT RAIN
+##MAKE IT RAIN
+##MAKE IT RAIN
+##MAKE IT RAIN
+##MAKE IT RAIN
+##MAKE IT RAIN
+##MAKE IT RAIN
+##MAKE IT RAIN
+##MAKE IT RAIN
+
+
+
+        if numrepeats <= 10:
+            print('******************************************')
+            print('Assumed Source Location: '+str(x0)+' , '+str(y0))
+            print('Assumed Source Concentration: '+str(c0))
+            print('--------------------------------------------------------')
+
+            print('******************************************')
+            print('Calculated Source Location: '+str(x0c)+' , '+str(y0c))
+            print('Calculated Source Concentration: '+str(c0c))
+            print('--------------------------------------------------------') 
+            print('error',c0errconc[it])
+ 
+            plt.figure()
+            plt.xlim((mingrid-1,maxgrid+1))
+            plt.ylim((mingrid-1,maxgrid+1))
+            terrain=colors.ListedColormap(['green', 'gray','black'])
+            plt.imshow(roadgrid_all, interpolation='nearest',cmap=terrain)
+            symbol_mult = 70
+
+            plt.scatter(x0c,y0c,symbol_mult,color='limegreen', label='Calc')
+            plt.scatter(x0,y0,symbol_mult,color='lime', marker = '*', label='Orig') 
+   
+            it0 = 0
+            it1 = num_sens_ground
+            plt.scatter(sensor_locx[it0:it1],sensor_locy[it0:it1],symbol_mult,color='orange', marker='s',label='ground')
+
+            it0 = it1
+            it1 = num_sens_ground+num_sens_bus
+            plt.scatter(sensor_locx[it0:it1],sensor_locy[it0:it1],symbol_mult,color='yellow',label='bus')
+            
+            it0 = it1
+            it1 = numsens
+            plt.scatter(sensor_locx[it0:it1],sensor_locy[it0:it1],symbol_mult,color='grey',marker='^', label='drone')
+
+            it0 = 0
+            it1=4
+            plt.scatter(sensor_locx_new[it0:it1],sensor_locy_new[it0:it1],(symbol_mult*0.5),color='magenta',label='4 closest')
+
+            plt.legend(bbox_to_anchor=(1.05,1),loc=2,borderaxespad=0,scatterpoints=1,fontsize=10)
+
+
+concc0erravg=np.nanmean(c0errconc)
+concc0errmed=np.nanmedian(c0errconc)
+concc0errstd=np.nanstd(c0errconc)
+locc0erravg=np.nanmean(c0errloc)
+locc0errmed=np.nanmedian(c0errloc)
+locc0errstd=np.nanstd(c0errloc)
+##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN
+##MAKE IT RAIN
+##MAKE IT RAIN
+##MAKE IT RAIN
+##MAKE IT RAIN
+##MAKE IT RAIN
+##MAKE IT RAIN
+
+## Assignment: Now add print statements for all of your metrics above.
+
+print ("Avg error c0",concc0erravg)
+print ("Median error c0",concc0errmed)
+print ("Std error c0",concc0errstd)
+
+print ("Avg error loc",locc0erravg)
+print ("Median error loc",locc0errmed)
+print ("Std error loc",locc0errstd)
+
+print ("No Solution Count", no_sol_count)
+
+fout.write ("Avg error c0 "+ str(concc0erravg)+'\n')
+fout.write("No Solution Count "+ str(no_sol_count))
+
+if numrepeats > 1:
+
+#  plot all simulations
+
+## optimize the x and y axis for your plots.
+
+    plt.figure()
+    plt.hist(c0errconc,color='g',range=(min(c0errconc),max(c0errconc)),bins=20)
+
+    plt.ylabel('Number of Times')
+    plt.xlabel('Percent Error')
+    plt.title('Conc')
+    plt.savefig(fname+'_conc_hist.png')
+    
+    plt.figure()
+    plt.hist(c0errloc,color='g',range=(min(c0errloc),max(c0errloc)),bins=20)
+
+    plt.ylabel('Number of Times')
+    plt.xlabel('Percent Error')
+    plt.title('Location)
+    plt.savefig(fname+'_loc_hist.png')
+
+ 
+#  zoom in   
+    plt.figure()
+    plt.ylim(0,200)
+    plt.xlim(-200,200)
+    plt.hist(c0errconc,color='r',range=(min(c0errconc),max(c0errconc)),bins=20)
+    
+    plt.ylabel('Number of Times')
+    plt.xlabel('Percent Error')
+    plt.title('Conc')
+    plt.savefig(fname+'_conc_hist_zoom.png')
+    
+    plt.figure()
+    plt.ylim(0,200)
+    plt.xlim(-200,200)
+    plt.hist(c0errloc,color='r',range=(min(c0errloc),max(c0errloc)),bins=20)
+    
+    plt.ylabel('Number of Times')
+    plt.xlabel('Percent Error')
+    plt.title('Location)
+    plt.savefig(fname+'_loc_hist_zoom.png')
+
+   
+fout.close()
+plt.show()
