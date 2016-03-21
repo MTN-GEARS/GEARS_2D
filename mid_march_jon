@@ -171,14 +171,16 @@ if numrepeats > 1:
 
 ## Assignment: Add a plot for c0err distance.  Also, optimize the x and y axis for your plots.
 ## Assignment: Add a title for your plot and save the figure.
-## Hint: plt.title('Conc')
-##       plt.savefig('name')
-
+ 
+   
     plt.figure()
     plt.hist(c0err,color='g',range=(min(c0err),max(c0err)),bins=20)
 
     plt.ylabel('Number of Times')
-    plt.xlabel('Percent Error')
+    plt.xlabel('Percent Error') 
+    plt.title('Conc')
+    plt.savefig(fname)
+    
     plt.figure()
  
 #  zoom in   
