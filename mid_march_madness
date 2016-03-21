@@ -206,6 +206,13 @@ if numrepeats > 1:
 
     plt.ylabel('Number of Times')
     plt.xlabel('Percent Error')
+    
+    plt.figure()
+    plt.hist(c0errloc,color='g',range=(min(c0errloc),max(c0errloc)),bins=20)
+
+    plt.ylabel('Number of Times')
+    plt.xlabel('Percent Error')
+    
     plt.figure()
  
 #  zoom in   
@@ -215,6 +222,14 @@ if numrepeats > 1:
     
     plt.ylabel('Number of Times')
     plt.xlabel('Percent Error')
+    plt.figure()
+    plt.ylim(0,200)
+    plt.xlim(-200,200)
+    plt.hist(c0errloc,color='r',range=(min(c0errloc),max(c0errloc)),bins=20)
+    
+    plt.ylabel('Number of Times')
+    plt.xlabel('Percent Error')
+    
    
 fout.close()
 plt.show()
