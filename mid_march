@@ -2,23 +2,29 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 from matplotlib import colors
-from utilities import *
+from utilities_gh import *
 
 #User Variables
+
+## Assignment : Create a variable with the "cost" of each sensor type and calculate the cost of your sensor choices.
 
 num_sens_ground =4 # number of sensors that are on the corners of the grid
 num_sens_bus =4   # number of sensors that are on a bus (random location on streets)
 num_sens_drones=4 # number of sensors that are on a drone (random location anywhere)
+
+numsens = num_sens_ground+num_sens_bus+num_sens_drones
 
 minconc = 1.0  # Minimum Concentration, can not be less than or equal 0
 
 maxconc =100
 mingrid = 0.0
 
-numrepeats=10000
+numrepeats=100
 sigma_error=0.5
 
-name='jon'  
+## Assignmnet: make a string that describes your run and adapt your output file.
+
+name='lat'  
 if name=='jon':
     fgrid = open("c:/users/richard/desktop/output/grid_jon.txt",'r')
     fout = open("c:/users/richard/desktop/output/4each_25p_error",'w')
@@ -41,6 +47,8 @@ if minconc <=0:
  sys.exit('Mimimum Concentration cannot be less than or equal to 0.')   
 negsens='Cannot have negative sensors!'
 
+# Assignment: Can you think of a way to make the code below more efficient?
+
 if numrepeats <=0:
     sys.exit('at least 1 run')
 if num_sens_bus<0:
@@ -54,33 +62,42 @@ if num_sens_ground<0:
 no_sol_count = 0
 
 # define arrays
+
+## Assignment: Add an array for c0err for distance.
+
 c0err=np.zeros(numrepeats)
 for it in range(0,numrepeats):
     acount = 0
     c0avg=0
     c0err[it] = 0
+    sens_conc = np.zeros(numsens)
     sensor_locx=np.zeros(numsens)
     sensor_locy=np.zeros(numsens)
-
+    sens_conc_new = np.zeros(4)
+    sensor_locx_new = np.zeros(4)
+    sensor_locy_new = np.zeros(4)
+    
 #   Location Corner sensors
-    if (num_sens_ground != 0): sensor_locx, sensor_locy = sens_loc_corner(mingrid,maxgrid_r,num_sens_ground,sensor_locx,sensor_locy)
+    if (num_sens_ground != 0): sensor_locx, sensor_locy = sens_loc_corner(mingrid,maxgrid,num_sens_ground,sensor_locx,sensor_locy)
     
 #   Location Bus sensors
     if (num_sens_bus != 0): sensor_locx,sensor_locy=bus(mingrid,maxgrid,num_sens_ground, num_sens_ground+num_sens_bus,roadgrid,sensor_locx,sensor_locy)
 
 #   Location Drone sensors
-    if (num_sens_drones != 0): sensor_locx, sensor_locy   = sens_loc_drones(mingrid,maxgrid_r,num_sens_ground+num_sens_bus+1,numsens,sensor_locx,sensor_locy)
+    if (num_sens_drones != 0): sensor_locx, sensor_locy   = sens_loc_drones(mingrid,maxgrid,num_sens_ground+num_sens_bus,numsens,sensor_locx,sensor_locy)
 
 #   Calculated concentration at sensors
-    c0,x0,y0,sens_conc = defconc(minconc,maxconc,mingrid,maxgrid_r,numsens,sensor_locx,sensor_locy,sigma_error)
+    c0,x0,y0,sens_conc = defconc(minconc,maxconc,mingrid,maxgrid,numsens,sensor_locx,sensor_locy,sigma_error)
     
 #    print('sensor',sensor_locx,sensor_locy,sens_conc)
 #   Find 4 largest concentrations
-    sens_conc_new, sensor_locx_new, sensor_locy_new = find_max_conc(sens_conc, sensor_locx,sensor_locy)
+    sens_conc_new, sensor_locx_new, sensor_locy_new = find_max_conc(sens_conc,sensor_locx,sensor_locy)
     
 #   Find solution
     c0c,x0c,y0c,flag,no_sol_count = find_solution(fout,x0,y0,c0,minconc,maxconc,mingrid,maxgrid,sens_conc,sensor_locx,sensor_locy,no_sol_count)
-    
+
+## Assignment: Add code to calculate error in distance.
+
     if flag == True:
         c0err[it] = (c0-c0c)/c0*100
         acount=acount + 1
@@ -122,11 +139,20 @@ for it in range(0,numrepeats):
 
             it0 = 0
             it1=4
-            plt.scatter(sensor_locx_new[it0:it1],sensor_locy_new[it0:it1],(symbol_mult*0.5),color='magenta')
+            plt.scatter(sensor_locx_new[it0:it1],sensor_locy_new[it0:it1],(symbol_mult*0.5),color='magenta',label='4 closest')
 
-            plt.legend(bbox_to_anchor=(1.05,1),loc=2,borderaxespad=0,scatterpoints=1)
-            
+            plt.legend(bbox_to_anchor=(1.05,1),loc=2,borderaxespad=0,scatterpoints=1,fontsize=10)
+
+## Assignment: Calculate average, median, and std dev for the c0 error and the dist error
+
+# Hint average calculated by: np.nanmean(c0err)
+#       median calcuated by: np.nanmedian(c0err)
+#       std dev calculated by: np.nanstd(c0err)
+#       this new code means you can take out acount above and right here.
+     
 if acount > 0: c0avg=c0avg/acount
+
+## Assignment: Now add print statements for all of your metrics above.
 
 print ("Avg error c0",c0avg)
 print ("No Solution Count", no_sol_count)
@@ -136,6 +162,12 @@ fout.write("No Solution Count "+ str(no_sol_count))
 if numrepeats > 1:
 
 #  plot all simulations
+
+## Assignment: Add a plot for c0err distance.  Also, optimize the x and y axis for your plots.
+## Assignment: Add a title for your plot and save the figure.
+## Hint: plt.title('Conc')
+##       plt.savefig('name')
+
     plt.figure()
     plt.hist(c0err,color='g',range=(min(c0err),max(c0err)),bins=20)
 
