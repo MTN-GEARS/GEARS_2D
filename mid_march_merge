@@ -4,16 +4,14 @@ import matplotlib.pyplot as plt
 import sys
 from matplotlib import colors
 from utilities import *
+import scipy.stats
 
 #User Variables
 
-num_sens_ground =4 # number of sensors that are on the corners of the grid
-num_sens_bus =4   # number of sensors that are on a bus (random location on streets)
-num_sens_drones=4 # number of sensors that are on a drone (random location anywhere)
+num_sens_ground =5 # number of sensors that are on the corners of the grid
+num_sens_bus =0 # number of sensors that are on a bus (random location on streets)
+num_sens_drones=0 # number of sensors that are on a drone (random location anywhere)
 
-num_sens_ground =4 # number of sensors that are on the corners of the grid
-num_sens_bus =4   # number of sensors that are on a bus (random location on streets)
-num_sens_drones=4 # number of sensors that are on a drone (random location anywhere)
 #Costs of individual sensors
 Drone_cost=300
 Bus_cost=200
@@ -22,7 +20,7 @@ Ground_cost=150
 cost=(num_sens_drones*Drone_cost)+(num_sens_bus*Bus_cost)+(num_sens_ground*Ground_cost)
 
 print"$$$$$$$$$$$$$$$$$$$$$$$$$$$$"
-print"        Cost = "+str(cost)
+print"             Cost: "+str(cost)+'$'
 print"$$$$$$$$$$$$$$$$$$$$$$$$$$$$"
 
 numsens = num_sens_ground+num_sens_bus+num_sens_drones
@@ -32,25 +30,25 @@ minconc = 1.0  # Minimum Concentration, can not be less than or equal 0
 maxconc =100
 mingrid = 0.0
 
-numrepeats=10
+numrepeats=10000
 sigma_error=0
 
 ## Assignmnet: make a string that describes your run and adapt your output file.
 
-name='school'
+name='jon'
 
 fname = name+'_'+str(num_sens_ground)+'_'+str(num_sens_bus)+'_'+str(num_sens_drones)+'_'+str(numrepeats)
 print("name",fname)
 
   
 if name=='jon':
-    path='c:/users/richard/desktop/output'
+    path='c:/users/richard/desktop/output/'
     
 if name=='emf':
     path='C:/Users/ethan/Desktop/python_out/'
     
 if name=='lat':
-    path='/Users/ltriplett/Desktop/python'
+    path='/Users/ltriplett/Desktop/python/'
 if name=='school':
     path='/Users/student/'
 
@@ -117,7 +115,12 @@ for it in range(0,numrepeats):
 
     if flag == True:
         c0errconc[it] = (c0-c0c)/c0*100
-        c0errloc[it] = math.sqrt((((x0-x0c)/x0*100)**2 +( (y0-y0c)/y0*100)**2))
+        if (x0 ==0):
+            c0errloc[it] =(y0-y0c)/y0*100
+        elif (y0==0):
+            c0errloc[it] =(x0-x0c)/x0*100
+        else:
+            c0errloc[it] =np.sqrt(((x0-x0c)/x0)**2 +((y0-y0c)/y0)**2)*100
         
 ##MAKE IT RAIN
 ##MAKE IT RAIN
@@ -181,12 +184,13 @@ for it in range(0,numrepeats):
             plt.legend(bbox_to_anchor=(1.05,1),loc=2,borderaxespad=0,scatterpoints=1,fontsize=10)
 
 
-concc0erravg=np.nanmean(c0errconc)
-concc0errmed=np.nanmedian(c0errconc)
-concc0errstd=np.nanstd(c0errconc)
-locc0erravg=np.nanmean(c0errloc)
-locc0errmed=np.nanmedian(c0errloc)
-locc0errstd=np.nanstd(c0errloc)
+concc0erravg=scipy.stats.nanmean(c0errconc)
+concc0errmed=scipy.stats.nanmedian(c0errconc)
+concc0errstd=scipy.stats.nanstd(c0errconc)
+locc0erravg=scipy.stats.nanmean(c0errloc)
+locc0errmed=scipy.stats.nanmedian(c0errloc)
+locc0errstd=scipy.stats.nanstd(c0errloc)
+
 ##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN
 ##MAKE IT RAIN
 ##MAKE IT RAIN
@@ -200,7 +204,7 @@ locc0errstd=np.nanstd(c0errloc)
 print ("Avg error c0",concc0erravg)
 print ("Median error c0",concc0errmed)
 print ("Std error c0",concc0errstd)
-
+print("******************************")
 print ("Avg error loc",locc0erravg)
 print ("Median error loc",locc0errmed)
 print ("Std error loc",locc0errstd)
@@ -224,13 +228,13 @@ if numrepeats > 1:
     plt.title('Conc')
     plt.savefig(fname+'_conc_hist.png')
     
-    plt.figure()
-    plt.hist(c0errloc,color='g',range=(min(c0errloc),max(c0errloc)),bins=20)
+#    plt.figure()
+#    plt.hist(c0errloc,color='g',range=(min(c0errloc),max(c0errloc)),bins=20)
 
-    plt.ylabel('Number of Times')
-    plt.xlabel('Percent Error')
-    plt.title('Location)
-    plt.savefig(fname+'_loc_hist.png')
+#    plt.ylabel('Number of Times')
+#    plt.xlabel('Percent Error')
+#    plt.title('Location')
+#    plt.savefig(fname+'_loc_hist.png')
 
  
 #  zoom in   
@@ -244,16 +248,17 @@ if numrepeats > 1:
     plt.title('Conc')
     plt.savefig(fname+'_conc_hist_zoom.png')
     
-    plt.figure()
-    plt.ylim(0,200)
-    plt.xlim(-200,200)
-    plt.hist(c0errloc,color='r',range=(min(c0errloc),max(c0errloc)),bins=20)
+#    plt.figure()
+#    plt.ylim(0,200)
+#    plt.xlim(-200,200)
+#    plt.hist(c0errloc,color='r',range=(min(c0errloc),max(c0errloc)),bins=20)
     
-    plt.ylabel('Number of Times')
-    plt.xlabel('Percent Error')
-    plt.title('Location)
-    plt.savefig(fname+'_loc_hist_zoom.png')
+#    plt.ylabel('Number of Times')
+#    plt.xlabel('Percent Error')
+#    plt.title('Location')
+#    plt.savefig(fname+'_loc_hist_zoom.png')
 
    
 fout.close()
 plt.show()
+
