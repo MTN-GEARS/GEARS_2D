@@ -105,7 +105,7 @@ for it in range(0,numrepeats):
     sens_conc_new, sensor_locx_new, sensor_locy_new = find_max_conc(sens_conc,sensor_locx,sensor_locy)
     
 #   Find solution
-    c0c,x0c,y0c,flag,no_sol_count = find_solution(fout,x0,y0,c0,minconc,maxconc,mingrid,maxgrid,sens_conc,sensor_locx,sensor_locy,no_sol_count)
+    c0c,x0c,y0c,flag,no_sol_count = find_solution(fout,x0,y0,c0,minconc,maxconc,mingrid,maxgrid,sens_conc_new,sensor_locx_new,sensor_locy_new,no_sol_count)
 
 ## Assignment: Add code to calculate error in distance.
 
