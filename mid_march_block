@@ -1,0 +1,235 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import sys
+from matplotlib import colors
+from utilities_new import *
+
+#User Variables
+
+num_sens_ground =5 # number of sensors that are on the corners of the grid
+cost_sens_ground = 1
+num_sens_bus =5 # number of sensors that are on a bus (random location on streets)
+cost_sens_bus = 2
+num_sens_drones=5 # number of sensors that are on a drone (random location anywhere)
+cost_sens_drones = 4
+cost= num_sens_ground*cost_sens_ground+num_sens_bus*cost_sens_bus+num_sens_drones*cost_sens_drones
+print('cost', cost)
+numrepeats=10
+sigma_error=0
+filename='trial4'
+name='lat'  
+gridname='grid.txt'
+debug=False
+turn_on_blocked = True
+
+minconc =1.0  # Minimum Concentration, can not be less than or equal 0
+maxconc =1000.0
+mingrid = 0.0
+
+tag = filename+'_'+name+' '+str(num_sens_ground)+'_'+str(num_sens_bus)+'_'+str(num_sens_drones)+'_'+str(maxconc)+'_'+str(numrepeats)+'_'+str(sigma_error)
+
+if name=='jon':
+    path = 'c:/users/richard/desktop/output/'
+if name=='emf':
+    path= 'C:/Users/ethan/Desktop/python_out/'
+if name=='lat':
+    path = '/Users/ltriplett/Desktop/python/'
+    
+fgrid = open(path+gridname,'r')
+fout = open(path+tag+'.txt','w')
+    
+numsens = num_sens_ground+num_sens_bus+num_sens_drones
+roadgrid_all = np .flipud(np.loadtxt(fgrid))
+roadgrid = roadgrid_all[:-1]
+maxgrid =int(np.sqrt(roadgrid.size))
+maxgrid_r = float(maxgrid)
+biy,bix= np.where((roadgrid) ==2)
+buildings= zip(bix,biy)
+              
+# input error checking
+
+if minconc <=0:
+ sys.exit('Mimimum Concentration cannot be less than or equal to 0.')   
+ 
+if numrepeats <=0:
+    sys.exit('at least 1 run')
+    
+if num_sens_bus<0 or num_sens_drones<0 or num_sens_ground < 0:
+    sys.exit('Cannot have negative sensors!')
+    
+#initialize variables
+no_sol_count = 0
+
+# define arrays
+c0err_conc=np.zeros(numrepeats)
+c0err_dist=np.zeros(numrepeats)
+
+
+# Loop through numrepeats
+for it in range(0,numrepeats):
+    c0avg=0
+    c0err_conc[it] = 0
+    c0err_dist[it]=0
+    sens_conc = np.zeros(numsens)
+    sensor_locx=np.zeros(numsens)
+    sensor_locy=np.zeros(numsens)
+    sens_conc_new = np.zeros(4)
+    sensor_locx_new = np.zeros(4)
+    sensor_locy_new = np.zeros(4)
+    blocked= np.zeros(numsens,dtype=bool)    
+
+#   Location Corner sensors
+    if (num_sens_ground != 0): sensor_locx, sensor_locy = sens_loc_corner(mingrid,maxgrid,num_sens_ground,sensor_locx,sensor_locy)
+    
+#   Location Bus sensors
+    if (num_sens_bus != 0): sensor_locx,sensor_locy=bus(mingrid,maxgrid,num_sens_ground, num_sens_ground+num_sens_bus,roadgrid,sensor_locx,sensor_locy)
+
+#   Location Drone sensors
+    if (num_sens_drones != 0): sensor_locx, sensor_locy   = sens_loc_drones(mingrid,maxgrid,num_sens_ground+num_sens_bus,numsens,sensor_locx,sensor_locy)
+
+#   Calculated concentration at sensors
+    c0,x0,y0,sens_conc = defconc(minconc,maxconc,mingrid,maxgrid,numsens,sensor_locx,sensor_locy,sigma_error)
+    if debug:
+        fout.write('Conc:'+str(it)+' '+str(sens_conc)+'\n')
+        fout.write('X:'+str(it)+' '+str(sensor_locx)+'\n')
+        fout.write('Y:'+str(it)+' '+str(sensor_locy)+'\n')
+    if turn_on_blocked:
+        for ig in range(0,num_sens_ground+num_sens_bus):
+            blocked[ig] == False
+            los = get_line((int(x0),int(y0)), (int(sensor_locx[ig]),int(sensor_locy[ig])))
+#            print('los',los)
+#            print('buildings',buildings)
+            for il in range(0,len(los)):
+
+                for ib in range(0,len(buildings)):
+
+                    if los[il]==buildings[ib]:
+                        blocked[ig]=True
+                        
+        for ig in range(num_sens_ground+num_sens_bus+1,numsens):
+            blocked[ig]=False
+            
+#    print('size', len(blocked))
+#   Find 4 largest concentrations
+#    print('blocked',blocked)
+#    print('where',np.array(np.where(blocked==False)).size)
+    sens_conc[np.where(blocked==True)] = 0
+#    print('size',len(np.where(blocked==False)))
+#    if len(sens_conc[np.where(blocked==False)]) > 4:
+
+    if np.array(np.where(blocked==False)).size > 4:
+#        print('in',sens_conc)
+        sens_conc_new, sensor_locx_new, sensor_locy_new = find_max_conc(sens_conc, sensor_locx,sensor_locy,blocked)
+#        print('new',sens_conc_new)
+    else:
+#        no_sol_count = no_sol_count + 1
+        fout.write('Sorry, not more than 4 sensors')
+#        no_sol_count = no_sol_count +1 
+#    elif len(sens_conc[np.where(blocked==False)]) == 3:
+#        fout.write('Only 3 sensors') 
+#    else:
+        
+    
+    if debug:
+        fout.write('Conc:'+str(it)+' '+str(sens_conc_new)+'\n')
+
+    c0c,x0c,y0c,flag,no_sol_count = find_solution(fout,x0,y0,c0,minconc,maxconc,mingrid,maxgrid,sens_conc_new,sensor_locx_new,sensor_locy_new,no_sol_count)
+ 
+    if flag == True:
+        if c0 != 0:
+            c0err_conc[it] = (c0-c0c)/c0*100
+        else:
+            c0err_conc[it]=float('nan')
+        if x0 == y0:
+            print(x0,x0c,(x0-x0c)/x0*100)
+            print('x0=y0',np.sqrt(((x0-x0c)/x0*100)**2+((y0-y0c)/y0*100)**2))
+        if x0 != 0 and y0 !=0:
+            c0err_dist[it] = np.sqrt(((x0-x0c)/x0*100)**2+((y0-y0c)/y0*100)**2)
+        else:
+            c0err_dist[it]=float('nan')
+
+        if numrepeats <= 10:
+            print('******************************************')
+            print('Assumed Source Location: '+str(x0)+' , '+str(y0))
+            print('Assumed Source Concentration: '+str(c0))
+            print('--------------------------------------------------------')
+
+            print('******************************************')
+            print('Calculated Source Location: '+str(x0c)+' , '+str(y0c))
+            print('Calculated Source Concentration: '+str(c0c))
+            print('--------------------------------------------------------') 
+            
+            plt_grid(mingrid,maxgrid,roadgrid_all,num_sens_ground, num_sens_bus, num_sens_drones, sensor_locx, sensor_locy,sensor_locx_new,sensor_locy_new,x0c,y0c,x0,y0,path,tag,blocked)
+
+cavg_conc = np.nanmean(c0err_conc)
+cmed_conc =np.nanmedian(c0err_conc)
+std_conc = np.nanstd(c0err_conc)
+
+cavg_dist = np.nanmean(c0err_dist)
+cmed_dist =np.nanmedian(c0err_dist)
+std_dist= np.nanstd(c0err_dist)
+
+print('Concentration')
+print ("Avg error c0",cavg_conc)
+print ("Median error c0", cmed_conc)
+print ("Std error c0", std_conc)
+
+print('Distance')
+print ("Avg error c0",cavg_dist)
+print ("Median error c0", cmed_dist)
+print ("Std error c0", std_dist)
+
+print ("No Solution Count", no_sol_count, float(no_sol_count)/float(numrepeats)*100)
+
+if debug:
+    fout.write ("Avg error c0 "+ str(cavg_conc)+'\n')
+    fout.write ("Avg error c0 "+ str(cavg_dist)+'\n')
+    fout.write("No Solution Count "+ str(no_sol_count))
+    
+if numrepeats > 1:
+
+#  plot all 
+    keep_conc = ~np.isnan(c0err_conc)
+    keep_dist = ~np.isnan(c0err_dist)
+    
+    plt.figure()
+    plt.hist(keep_conc,color='g',range=(min(keep_conc),max(keep_conc)),bins=20)
+    plt.ylabel('Number of Times')
+    plt.xlabel('Percent Error')
+    plt.title('Conc')
+    plt.savefig(path+tag+'_hist_conc.png')
+ 
+    plt.figure()
+    plt.hist(keep_dist,color='g',range=(min(keep_dist),max(keep_dist)),bins=20)
+    plt.ylabel('Number of Times')
+    plt.xlabel('Percent Error')
+    plt.title('Dist')
+    plt.savefig(path+tag+'_hist_dist.png')
+
+ #  zoom in   
+    plt.figure()
+    plt.ylim(0,.2*numrepeats)
+    plt.xlim(-200,200)
+    plt.hist(keep_conc,color='r',range=(min(keep_conc),max(keep_conc)),bins=20,label='std = '+ str(std_conc))
+    plt.legend(fontsize=10)
+    plt.ylabel('Number of Times')
+    plt.xlabel('Percent Error')
+    plt.title('Conc')
+    plt.savefig(path+tag+'_hist_zoom_conc.png')
+    
+    plt.figure()
+    plt.ylim(0,.2*numrepeats)
+    plt.xlim(-200,200)
+    plt.hist(keep_dist,color='r',range=(min(keep_dist),max(keep_dist)),bins=20,label='std = '+ str(std_dist))
+    plt.legend(fontsize=10)
+    plt.ylabel('Number of Times')
+    plt.xlabel('Percent Error')
+    plt.title('Dist')
+    plt.savefig(path+tag+'_hist_dist_zoom.png')
+    
+
+   
+fout.close()
+plt.show()
+# if you want to close all plots, use plt.close("all")
+# if you want to reload module: reload(utilities)
