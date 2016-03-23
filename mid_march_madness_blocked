@@ -20,6 +20,7 @@ Ground_cost=150
 ##Add blocked
 turn_on_blocked = True
 
+
 cost=(num_sens_drones*Drone_cost)+(num_sens_bus*Bus_cost)+(num_sens_ground*Ground_cost)
 
 print"$$$$$$$$$$$$$$$$$$$$$$$$$$$$"
@@ -38,7 +39,7 @@ sigma_error=25
 
 ## Assignmnet: make a string that describes your run and adapt your output file.
 
-name='lat2'
+name='lat'
 
 fname = name+'_'+str(num_sens_ground)+'_'+str(num_sens_bus)+'_'+str(num_sens_drones)+'_'+str(numrepeats)
 print("name",fname)
@@ -53,13 +54,10 @@ if name=='emf':
 if name=='lat':
     path='/Users/ltriplett/Desktop/python/'
     
-if name=='lat2':
-    path = '/Users/ltriplett/Desktop/python/'
-    
 if name=='school':
     path='/Users/student/'
 
-fgrid=open(path+'grid.txt','r')    
+fgrid=open(path+'grid_grid.txt','r')    
 fout = open(path+fname,'w')
 
  
@@ -138,6 +136,7 @@ for it in range(0,numrepeats):
 
 #   Find 4 largest concentrations
     sens_conc_new, sensor_locx_new, sensor_locy_new = find_max_conc(sens_conc,sensor_locx,sensor_locy,blocked)
+
     
 #   Find solution
     c0c,x0c,y0c,flag,no_sol_count = find_solution(fout,x0,y0,c0,minconc,maxconc,mingrid,maxgrid,sens_conc_new,sensor_locx_new,sensor_locy_new,no_sol_count)
@@ -154,15 +153,15 @@ for it in range(0,numrepeats):
         else:
             c0errconc[it] = float('nan')
         if (x0 ==0):
-            c0errloc[it] =(y0-y0c)/y0*100
+            c0errloc[it] =(y0-y0c)
         else:
             c0errloc[it] =float('nan')
         if (y0 ==0):
-            c0errloc[it] =(x0-x0c)/y0*100
+            c0errloc[it] =(x0-x0c)
         else:
             c0errloc[it] =float('nan')
         if x0 !=0 and y0 != 0:
-            c0errloc[it] =np.sqrt(((x0-x0c)/x0)**2 +((y0-y0c)/y0)**2)*100
+            c0errloc[it] =np.sqrt((x0-x0c)**2+(y0-y0c)**2)
         else:
             c0errloc[it] =float('nan')
         
@@ -227,7 +226,7 @@ for it in range(0,numrepeats):
                 if blocked[ig] == True:
                     plt.scatter(sensor_locx[ig],sensor_locy[ig],symbol_mult*2,color='red',marker='x')
  
-  #          plt.legend(bbox_to_anchor=(1.05,1),loc=2,borderaxespad=0,scatterpoints=1,fontsize=10)
+            plt.legend(bbox_to_anchor=(1.05,1),loc=2,borderaxespad=0,scatterpoints=1,fontsize=10)
 
 
 concc0erravg=scipy.stats.nanmean(c0errconc)
@@ -263,10 +262,10 @@ print ("Avg error loc",locc0erravg)
 print ("Median error loc",locc0errmed)
 print ("Std error loc",locc0errstd)
 
-print ("No Solution Count", no_sol_count)
+print ("No Solution Count", no_sol_count, no_sol_count/float(numrepeats)*100)
 
 fout.write ("Avg error c0 "+ str(concc0erravg)+'\n')
-fout.write("No Solution Count "+ str(no_sol_count))
+fout.write("No Solution Count "+ str(no_sol_count)+' '+str(float(no_sol_count/numrepeats*100)))
 
 if numrepeats > 1:
 
@@ -304,7 +303,7 @@ if numrepeats > 1:
     
     plt.figure()
     plt.ylim(0,200)
-    plt.xlim(-200,200)
+#    plt.xlim(-200,200)
     plt.hist(c0errloc,color='r',range=(min(c0errloc),max(c0errloc)),bins=20)
     
     plt.ylabel('Number of Times')
