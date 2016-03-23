@@ -76,14 +76,14 @@ def sens_loc_corner(min_loc,max_loc,num, sensor_locx,sensor_locy):
         sensor_locx[1]=max_loc
         sensor_locy[1]=min_loc
     if num >= 3:
-        sensor_locx[2]=round(max_loc/2.0)
-        sensor_locy[2]=round(max_loc/2.0)
+        sensor_locx[2]=round(max_loc/2.0)+1
+        sensor_locy[2]=round(max_loc/2.0)+1
     if num >= 4:
         sensor_locx[3]=min_loc 
         sensor_locy[3]=min_loc 
     if num >= 5:
         sensor_locx[4]=max_loc 
-        sensor_locy[4]=max_loc 
+        sensor_locy[4]=max_loc  
     if num == 0:
         print 'Sorry, You cannot solve with Zero sensors!'
     if num < 0:
