@@ -1,4 +1,8 @@
 def get_line(start, end):
+
+# Calculates the line of sight from the estimated source to the sensor.
+# Provided by our mentor based on: http://www.roguebasin.com/index.php?title=Bresenham%27s_Line_Algorithm
+
     """Bresenham's Line Algorithm
     Produces a list of tuples from start and end
  
@@ -57,17 +61,23 @@ def get_line(start, end):
         points.reverse()
     return points
     
-def find_max_conc(sens_conc,sensor_locx,sensor_locy,blocked):
+def find_max_cts(sens_cts,sensor_locx,sensor_locy):
+
+# Describe.....
+# Algorithm developed and programmed by Ethan Fisk.
+
   import numpy as np 
 
-  indices = np.argsort(sens_conc)
-  sens_conc_new = sens_conc[indices]
+  indices = np.argsort(sens_cts)
+  sens_cts_new = sens_cts[indices]
   sens_locx_new = sensor_locx[indices]
   sens_locy_new = sensor_locy[indices]
-  return sens_conc_new[-4:], sens_locx_new[-4:], sens_locy_new[-4:]
+  return sens_cts_new[-4:], sens_locx_new[-4:], sens_locy_new[-4:]
   
-# Module to define locations of ground sensors.
 def sens_loc_corner(min_loc,max_loc,num, sensor_locx,sensor_locy):
+
+# Module to define locations of ground sensors.
+# Algorithm developed and programmed by Jonathan Triplett.
     
     if num >= 1:
         sensor_locx[0]=min_loc
@@ -91,9 +101,13 @@ def sens_loc_corner(min_loc,max_loc,num, sensor_locx,sensor_locy):
         
     return sensor_locx, sensor_locy
     
-# Module to define bus locations
+
 
 def bus(min_loc,max_loc,num1,num2,roadgrid,sensor_locx,sensor_locy):
+
+# Module to define bus locations.
+# Algorithm developed and programmed by Ethan Fisk.
+
     import numpy as np    
     for isens in range(num1,num2):
         valid=False
@@ -112,8 +126,12 @@ def bus(min_loc,max_loc,num1,num2,roadgrid,sensor_locx,sensor_locy):
 
     return sensor_locx,sensor_locy
   
-#Module to define locations of drones  
+
 def sens_loc_drones(min_loc,max_loc,num1,num2,sensor_locx,sensor_locy):
+
+#Module to define locations of drones.  
+# Algorithm developed and programmed by Nate Golden.
+
     import numpy as np  
     for isens in range(num1,num2):
    
@@ -122,55 +140,61 @@ def sens_loc_drones(min_loc,max_loc,num1,num2,sensor_locx,sensor_locy):
     
     return sensor_locx,sensor_locy   
   
-# Module to define source location, source concentration, sensor concentrations, + uncertainty
 
-def defconc(minconc,maxconc,minloc,maxloc,numsens,sensor_locx,sensor_locy,sigma_error):
+
+def defcts(mincts,maxcts,minloc,maxloc,numsens,sensor_locx,sensor_locy,sigma_error):
+
+# Module to define source location, source counts, sensor counts, + uncertainty
+# Algorithm developed and programmed by ??.
+
     import numpy as np 
     debug = False
     
     if debug:
-        source_conc = 100
+        source_cts = 100
         source_locx = 10
         source_locy = 10
     else:
-        source_conc = np.random.randint(minconc,maxconc)
+        source_cts = np.random.randint(mincts,maxcts)
         source_locx=float(np.random.randint(minloc+2,maxloc-2))
         source_locy=float(np.random.randint(minloc+2,maxloc-2))
     
-    sensor_conc = source_conc/((source_locx-sensor_locx)**2+(source_locy-sensor_locy)**2)
+    sensor_cts = source_cts/((source_locx-sensor_locx)**2+(source_locy-sensor_locy)**2)
     
     if (sigma_error != 0):
         error=np.random.normal(0,sigma_error/100.0,numsens)
     else:
         error = np.zeros(numsens)
         
-    sensor_conc = sensor_conc*(1.0-error)
+    sensor_cts = sensor_cts*(1.0-error)
     
-    return source_conc,source_locx, source_locy, sensor_conc
+    return source_cts,source_locx, source_locy, sensor_cts
 
-    
-def find_solution(fout,x0,y0,c0,minconc,maxconc,mingrid,maxgrid,sens_conc,sensor_locx,sensor_locy,no_sol_count):
+def find_solution(fout,x0,y0,c0,mincts,maxcts,mingrid,maxgrid,sens_cts,sensor_locx,sensor_locy,no_sol_count):
 
-    source_str = 'Source X Location:'+str(x0)+' Y Location: '+str(y0)+' Concentration: '+str(c0)+'\n'
+# Describe....
+# Algorithm developed by mentor and programmed by Jonathan Triplett.
+
+    source_str = 'Source X Location:'+str(x0)+' Y Location: '+str(y0)+' Counts: '+str(c0)+'\n'
     sens_x_str = 'Sensor  X Locations '+str(sensor_locx)+'\n'
     sens_y_str = 'Sensor Y Locations '+str(sensor_locy)+'\n'
-    sens_conc_str = 'Sensor Concentrations '+str(sens_conc)+'\n'
+    sens_cts_str = 'Sensor Counts '+str(sens_cts)+'\n'
     stars = '****************************************************\n'
 
-    A= sens_conc[0]-sens_conc[1]
-    B= -2*sensor_locx[0]*sens_conc[0]+2*sensor_locx[1]*sens_conc[1]
-    C= -2*sensor_locy[0]*sens_conc[0]+2*sensor_locy[1]*sens_conc[1]
-    D= sens_conc[0]*(sensor_locx[0]**2+sensor_locy[0]**2)-sens_conc[1]*(sensor_locx[1]**2+sensor_locy[1]**2)
+    A= sens_cts[0]-sens_cts[1]
+    B= -2*sensor_locx[0]*sens_cts[0]+2*sensor_locx[1]*sens_cts[1]
+    C= -2*sensor_locy[0]*sens_cts[0]+2*sensor_locy[1]*sens_cts[1]
+    D= sens_cts[0]*(sensor_locx[0]**2+sensor_locy[0]**2)-sens_cts[1]*(sensor_locx[1]**2+sensor_locy[1]**2)
 
-    E= sens_conc[2]-sens_conc[3]
-    F= -2*sensor_locx[2]*sens_conc[2]+2*sensor_locx[3]*sens_conc[3]
-    G= -2*sensor_locy[2]*sens_conc[2]+2*sensor_locy[3]*sens_conc[3]
-    H= sens_conc[2]*(sensor_locx[2]**2+sensor_locy[2]**2)-sens_conc[3]*(sensor_locx[3]**2+sensor_locy[3]**2)
+    E= sens_cts[2]-sens_cts[3]
+    F= -2*sensor_locx[2]*sens_cts[2]+2*sensor_locx[3]*sens_cts[3]
+    G= -2*sensor_locy[2]*sens_cts[2]+2*sensor_locy[3]*sens_cts[3]
+    H= sens_cts[2]*(sensor_locx[2]**2+sensor_locy[2]**2)-sens_cts[3]*(sensor_locx[3]**2+sensor_locy[3]**2)
 
-    I= sens_conc[1]-sens_conc[3]
-    J= -2*sensor_locx[1]*sens_conc[1]+2*sensor_locx[3]*sens_conc[3]
-    K= -2*sensor_locy[1]*sens_conc[1]+2*sensor_locy[3]*sens_conc[3]
-    L= sens_conc[1]*(sensor_locx[1]**2+sensor_locy[1]**2)-sens_conc[3]*(sensor_locx[3]**2+sensor_locy[3]**2)
+    I= sens_cts[1]-sens_cts[3]
+    J= -2*sensor_locx[1]*sens_cts[1]+2*sensor_locx[3]*sens_cts[3]
+    K= -2*sensor_locy[1]*sens_cts[1]+2*sensor_locy[3]*sens_cts[3]
+    L= sens_cts[1]*(sensor_locx[1]**2+sensor_locy[1]**2)-sens_cts[3]*(sensor_locx[3]**2+sensor_locy[3]**2)
 
     M = B*I-A*J
     N = B*E-A*F
@@ -180,14 +204,14 @@ def find_solution(fout,x0,y0,c0,minconc,maxconc,mingrid,maxgrid,sens_conc,sensor
     if (den != 0 and (B*E-A*F) !=0 ):
         y0c = (num)/(den)
         x0c = (A*H-D*E-(C*E-A*G)*y0c)/(B*E-A*F)
-        c0c = sens_conc[0]*((sensor_locx[0]-x0c)**2 + (sensor_locy[0]-y0)**2)
+        c0c = sens_cts[0]*((sensor_locx[0]-x0c)**2 + (sensor_locy[0]-y0)**2)
         flag = True
     else:
         fout.write('no soln \n')
         fout.write(source_str)
         fout.write(sens_x_str)
         fout.write(sens_y_str)
-        fout.write(sens_conc_str)
+        fout.write(sens_cts_str)
         fout.write(stars)
         c0c = float('nan')
         x0c = float('nan')
@@ -199,7 +223,7 @@ def find_solution(fout,x0,y0,c0,minconc,maxconc,mingrid,maxgrid,sens_conc,sensor
         fout.write(source_str)
         fout.write(sens_x_str)
         fout.write(sens_y_str)
-        fout.write(sens_conc_str)
+        fout.write(sens_cts_str)
         fout.write(stars)
         c0c = float('nan')
         x0c = float('nan')
@@ -211,19 +235,19 @@ def find_solution(fout,x0,y0,c0,minconc,maxconc,mingrid,maxgrid,sens_conc,sensor
         fout.write(source_str)
         fout.write(sens_x_str)
         fout.write(sens_y_str)
-        fout.write(sens_conc_str)
+        fout.write(sens_cts_str)
         fout.write(stars)
         c0c = float('nan')
         x0c = float('nan')
         y0c = float('nan')
         flag = False
         no_sol_count = no_sol_count + 1
-    if c0c < minconc or y0c > maxconc:
-        fout.write('no soln conc less than 0 \n')
+    if c0c < mincts or y0c > maxcts:
+        fout.write('no soln cts less than 0 \n')
         fout.write(source_str)
         fout.write(sens_x_str)
         fout.write(sens_y_str)
-        fout.write(sens_conc_str)
+        fout.write(sens_cts_str)
         fout.write(stars)
         c0c = float('nan')
         x0c = float('nan')
