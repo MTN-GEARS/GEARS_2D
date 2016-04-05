@@ -1,7 +1,7 @@
 def get_line(start, end):
 
-# Calculates the line of sight from the estimated source to the sensor.
-# Provided by our mentor based on: http://www.roguebasin.com/index.php?title=Bresenham%27s_Line_Algorithm
+#   Calculates the line of sight from the estimated source to the sensor.
+#   Provided by our mentor based on: http://www.roguebasin.com/index.php?title=Bresenham%27s_Line_Algorithm
 
     """Bresenham's Line Algorithm
     Produces a list of tuples from start and end
@@ -16,9 +16,7 @@ def get_line(start, end):
     """
     # Setup initial conditions
     x1, y1 = start
-#    print('start', start)
     x2, y2 = end
-#    print('end', end)
     dx = x2 - x1
     dy = y2 - y1
  
@@ -76,8 +74,8 @@ def find_max_cts(sens_cts,sensor_locx,sensor_locy):
   
 def sens_loc_corner(min_loc,max_loc,num, sensor_locx,sensor_locy):
 
-# Module to define locations of ground sensors.
-# Algorithm developed and programmed by Jonathan Triplett.
+#   Module to define locations of ground sensors.
+#   Algorithm developed and programmed by Jonathan Triplett.
     
     if num >= 1:
         sensor_locx[0]=min_loc
@@ -105,8 +103,8 @@ def sens_loc_corner(min_loc,max_loc,num, sensor_locx,sensor_locy):
 
 def bus(min_loc,max_loc,num1,num2,roadgrid,sensor_locx,sensor_locy):
 
-# Module to define bus locations.
-# Algorithm developed and programmed by Ethan Fisk.
+#   Module to define bus locations.
+#   Algorithm developed and programmed by Ethan Fisk.
 
     import numpy as np    
     for isens in range(num1,num2):
@@ -129,8 +127,8 @@ def bus(min_loc,max_loc,num1,num2,roadgrid,sensor_locx,sensor_locy):
 
 def sens_loc_drones(min_loc,max_loc,num1,num2,sensor_locx,sensor_locy):
 
-#Module to define locations of drones.  
-# Algorithm developed and programmed by Nate Golden.
+#   Module to define locations of drones.  
+#   Algorithm developed and programmed by Nate Golden.
 
     import numpy as np  
     for isens in range(num1,num2):
@@ -140,12 +138,10 @@ def sens_loc_drones(min_loc,max_loc,num1,num2,sensor_locx,sensor_locy):
     
     return sensor_locx,sensor_locy   
   
-
-
 def defcts(mincts,maxcts,minloc,maxloc,numsens,sensor_locx,sensor_locy,sigma_error):
 
-# Module to define source location, source counts, sensor counts, + uncertainty
-# Algorithm developed and programmed by ??.
+#   Module to define source location, source counts, sensor counts, + uncertainty
+#   Algorithm developed and programmed by ??.
 
     import numpy as np 
     debug = False
@@ -172,8 +168,8 @@ def defcts(mincts,maxcts,minloc,maxloc,numsens,sensor_locx,sensor_locy,sigma_err
 
 def find_solution(fout,x0,y0,c0,mincts,maxcts,mingrid,maxgrid,sens_cts,sensor_locx,sensor_locy,no_sol_count):
 
-# Describe....
-# Algorithm developed by mentor and programmed by Jonathan Triplett.
+#   Describe....
+#   Algorithm developed by mentor and programmed by Jonathan Triplett.
 
     source_str = 'Source X Location:'+str(x0)+' Y Location: '+str(y0)+' Counts: '+str(c0)+'\n'
     sens_x_str = 'Sensor  X Locations '+str(sensor_locx)+'\n'
