@@ -3,44 +3,47 @@ import math
 import matplotlib.pyplot as plt
 import sys
 from matplotlib import colors
-from utilities import *
+from utilities_blocked import *
 import scipy.stats
 
 #User Variables
 
 num_sens_ground =5 # number of sensors that are on the corners of the grid
-num_sens_bus =0 # number of sensors that are on a bus (random location on streets)
-num_sens_drones=0 # number of sensors that are on a drone (random location anywhere)
+num_sens_bus =5# number of sensors that are on a bus (random location on streets)
+num_sens_drones=5 # number of sensors that are on a drone (random location anywhere)
+numsens = num_sens_ground+num_sens_bus+num_sens_drones
 
 #Costs of individual sensors
+
 Drone_cost=300
 Bus_cost=200
 Ground_cost=150
 
 cost=(num_sens_drones*Drone_cost)+(num_sens_bus*Bus_cost)+(num_sens_ground*Ground_cost)
-
 print"$$$$$$$$$$$$$$$$$$$$$$$$$$$$"
 print"             Cost: "+str(cost)+'$'
 print"$$$$$$$$$$$$$$$$$$$$$$$$$$$$"
 
-numsens = num_sens_ground+num_sens_bus+num_sens_drones
+# If you want buildings to block ground and bus sensors, set to True, otherwise, set to False.
 
-minconc = 1.0  # Minimum Concentration, can not be less than or equal 0
-maxconc =1000.0
+turn_on_blocked = True
+
+mincts = 1.0  # Minimum Count, can not be less than or equal 0
+maxcts =1000.0
 
 mingrid = 0.0
 
 numrepeats=10000
-sigma_error=0
+sigma_error=25  # In percent, i.e. 25.
 
-## Assignmnet: make a string that describes your run and adapt your output file.
+name='lat'  # Choose which user is running this program.
 
-name='lat'
+# Create filename for text and plot output.
 
 fname = name+'_'+str(num_sens_ground)+'_'+str(num_sens_bus)+'_'+str(num_sens_drones)+'_'+str(numrepeats)
-print("name",fname)
 
-  
+# Based on user, define path.
+
 if name=='jon':
     path='c:/users/richard/desktop/output/'
     
@@ -49,23 +52,37 @@ if name=='emf':
     
 if name=='lat':
     path='/Users/ltriplett/Desktop/python/'
+    
 if name=='school':
     path='/Users/student/'
 
-fgrid=open(path+'grid.txt','r')    
+# Choose your grid name
+
+fgrid=open(path+'grid_grid.txt','r')    
+
+# Define output file name.
 fout = open(path+fname,'w')
 
- 
-numsens = num_sens_ground+num_sens_bus+num_sens_drones
+# Read in grid.  Use flipud because ....
 roadgrid_all = np .flipud(np.loadtxt(fgrid))
+
+# Subtract one because....
 roadgrid = roadgrid_all[:-1]
+
+#Define max grid, assumes the grid is square.
 maxgrid =int(np.sqrt(roadgrid.size))
-maxgrid_r = float(maxgrid)
+
+#Define location of buildings.  Flip x and y because ....
+biy,bix= np.where((roadgrid) ==2)
+
+# Zip the x and y grids together to create a tuple that can be compared 
+# with line-of-sight calculation.
+buildings= zip(bix,biy)
 
 # input error checking
 
-if minconc <=0:
- sys.exit('Mimimum Concentration cannot be less than or equal to 0.')   
+if mincts <=0:
+ sys.exit('Mimimum Count cannot be less than or equal to 0.')   
 
 if numrepeats <=0 or num_sens_bus<0 or num_sens_drones<0 or num_sens_ground<0:
     sys.exit('You have negative sensors, or you ran it 0 times')
@@ -75,18 +92,19 @@ no_sol_count = 0
 
 # define arrays
 
-c0errconc=np.zeros(numrepeats)
+c0errcts=np.zeros(numrepeats)
 c0errloc=np.zeros(numrepeats)
 
 for it in range(0,numrepeats):
-    c0errconc[it] = 0
+    c0errcts[it] = 0
     c0errloc[it]=0
-    sens_conc = np.zeros(numsens)
+    sens_cts = np.zeros(numsens)
     sensor_locx=np.zeros(numsens)
     sensor_locy=np.zeros(numsens)
-    sens_conc_new = np.zeros(4)
+    sens_cts_new = np.zeros(4)
     sensor_locx_new = np.zeros(4)
     sensor_locy_new = np.zeros(4)
+    blocked= np.zeros(numsens,dtype=bool)    
     
 #   Location Corner sensors
     if (num_sens_ground != 0): sensor_locx, sensor_locy = sens_loc_corner(mingrid,maxgrid,num_sens_ground,sensor_locx,sensor_locy)
@@ -97,33 +115,55 @@ for it in range(0,numrepeats):
 #   Location Drone sensors
     if (num_sens_drones != 0): sensor_locx, sensor_locy   = sens_loc_drones(mingrid,maxgrid,num_sens_ground+num_sens_bus,numsens,sensor_locx,sensor_locy)
 
-#   Calculated concentration at sensors
-    c0,x0,y0,sens_conc = defconc(minconc,maxconc,mingrid,maxgrid,numsens,sensor_locx,sensor_locy,sigma_error)
+#   Calculated counts at sensors
+    c0,x0,y0,sens_cts = defcts(mincts,maxcts,mingrid,maxgrid,numsens,sensor_locx,sensor_locy,sigma_error)
     
-#    print('sensor',sensor_locx,sensor_locy,sens_conc)
-#   Find 4 largest concentrations
-    sens_conc_new, sensor_locx_new, sensor_locy_new = find_max_conc(sens_conc,sensor_locx,sensor_locy)
+#   Calculate line-of-sight for each source (assumed) and ground or bus sensor.  Drones are assumed to not be blocked by buildings.
+    if turn_on_blocked:
+        for ig in range(0,num_sens_ground+num_sens_bus):
+            blocked[ig] == False
+            los = get_line((int(x0),int(y0)), (int(sensor_locx[ig]),int(sensor_locy[ig])))
+            for il in range(0,len(los)):
+                for ib in range(0,len(buildings)):
+                    if los[il]==buildings[ib]:
+                        blocked[ig]=True
+                        
+        for ig in range(num_sens_ground+num_sens_bus+1,numsens):
+            blocked[ig]=False
+#   If blocked = true, set concentration to 0.
+
+    sens_cts[np.where(blocked==True)] = 0
+
+#   If there are 4 or more sensors, find the sensors with the largest counts.
+    if np.array(np.where(blocked==False)).size >= 4:
+        sens_cts_new, sensor_locx_new, sensor_locy_new = find_max_cts(sens_cts, sensor_locx,sensor_locy)
+    else:
+        fout.write('Sorry, not more than 4 sensors')
+        flag = False
     
 #   Find solution
-    c0c,x0c,y0c,flag,no_sol_count = find_solution(fout,x0,y0,c0,minconc,maxconc,mingrid,maxgrid,sens_conc_new,sensor_locx_new,sensor_locy_new,no_sol_count)
+    c0c,x0c,y0c,flag,no_sol_count = find_solution(fout,x0,y0,c0,mincts,maxcts,mingrid,maxgrid,sens_cts_new,sensor_locx_new,sensor_locy_new,no_sol_count)
 
-## Assignment: Add code to calculate error in distance.
-
+#   Calculate statistics.
+    if flag == False:
+        c0errcts[it]= float('nan')
+        c0errloc[it] = float('nan')
+        
     if flag == True:
         if c0 !=0:
-            c0errconc[it] = (c0-c0c)/c0*100
+            c0errcts[it] = (c0-c0c)/c0*100
         else:
-            c0errconc[it] = float('nan')
+            c0errcts[it] = float('nan')
         if (x0 ==0):
-            c0errloc[it] =(y0-y0c)/y0*100
+            c0errloc[it] =(y0-y0c)
         else:
             c0errloc[it] =float('nan')
         if (y0 ==0):
-            c0errloc[it] =(x0-x0c)/y0*100
+            c0errloc[it] =(x0-x0c)
         else:
             c0errloc[it] =float('nan')
         if x0 !=0 and y0 != 0:
-            c0errloc[it] =np.sqrt(((x0-x0c)/x0)**2 +((y0-y0c)/y0)**2)*100
+            c0errloc[it] =np.sqrt((x0-x0c)**2+(y0-y0c)**2)
         else:
             c0errloc[it] =float('nan')
         
@@ -146,19 +186,17 @@ for it in range(0,numrepeats):
 ##MAKE IT RAIN
 ##MAKE IT RAIN
 
-
-
         if numrepeats <= 10:
             print('******************************************')
             print('Assumed Source Location: '+str(x0)+' , '+str(y0))
-            print('Assumed Source Concentration: '+str(c0))
+            print('Assumed Source Count: '+str(c0))
             print('--------------------------------------------------------')
 
             print('******************************************')
             print('Calculated Source Location: '+str(x0c)+' , '+str(y0c))
-            print('Calculated Source Concentration: '+str(c0c))
+            print('Calculated Source Count: '+str(c0c))
             print('--------------------------------------------------------') 
-            print('error',c0errconc[it])
+            print('error',c0errcts[it])
  
             plt.figure()
             plt.xlim((mingrid-1,maxgrid+1))
@@ -167,7 +205,7 @@ for it in range(0,numrepeats):
             plt.imshow(roadgrid_all, interpolation='nearest',cmap=terrain)
             symbol_mult = 70
 
-            plt.scatter(x0c,y0c,symbol_mult,color='limegreen', label='Calc')
+            plt.scatter(x0c,y0c,symbol_mult,color='pink', label='Calc')
             plt.scatter(x0,y0,symbol_mult,color='lime', marker = '*', label='Orig') 
    
             it0 = 0
@@ -186,24 +224,21 @@ for it in range(0,numrepeats):
             it1=4
             plt.scatter(sensor_locx_new[it0:it1],sensor_locy_new[it0:it1],(symbol_mult*0.5),color='magenta',label='4 closest')
 
+            for ig in range(0,numsens):
+                if blocked[ig] == True:
+                    plt.scatter(sensor_locx[ig],sensor_locy[ig],symbol_mult*2,color='red',marker='x')
+ 
             plt.legend(bbox_to_anchor=(1.05,1),loc=2,borderaxespad=0,scatterpoints=1,fontsize=10)
 
 
-concc0erravg=scipy.stats.nanmean(c0errconc)
-concc0errmed=scipy.stats.nanmedian(c0errconc)
-concc0errstd=scipy.stats.nanstd(c0errconc)
+ctsc0erravg=scipy.stats.nanmean(c0errcts)
+ctsc0errmed=scipy.stats.nanmedian(c0errcts)
+ctsc0errstd=scipy.stats.nanstd(c0errcts)
 locc0erravg=scipy.stats.nanmean(c0errloc)
 locc0errmed=scipy.stats.nanmedian(c0errloc)
 locc0errstd=scipy.stats.nanstd(c0errloc)
 
-if False:'''
-concc0erravg=np.nanmean(c0errconc)
-concc0errmed=np.nanmedian(c0errconc)
-concc0errstd=np.nanstd(c0errconc)
-locc0erravg=np.nanmean(c0errloc)
-locc0errmed=np.nanmedian(c0errloc)
-locc0errstd=np.nanstd(c0errloc)
-'''
+
 ##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN##MAKE IT RAIN
 ##MAKE IT RAIN
 ##MAKE IT RAIN
@@ -212,65 +247,61 @@ locc0errstd=np.nanstd(c0errloc)
 ##MAKE IT RAIN
 ##MAKE IT RAIN
 
-## Assignment: Now add print statements for all of your metrics above.
-
-print ("Avg error c0",concc0erravg)
-print ("Median error c0",concc0errmed)
-print ("Std error c0",concc0errstd)
+print ("Avg error c0",ctsc0erravg)
+print ("Median error c0",ctsc0errmed)
+print ("Std error c0",ctsc0errstd)
 print("******************************")
 print ("Avg error loc",locc0erravg)
 print ("Median error loc",locc0errmed)
 print ("Std error loc",locc0errstd)
 
-print ("No Solution Count", no_sol_count)
+print ("No Solution Count", no_sol_count, no_sol_count/float(numrepeats)*100)
 
-fout.write ("Avg error c0 "+ str(concc0erravg)+'\n')
-fout.write("No Solution Count "+ str(no_sol_count))
+fout.write ("Avg error c0 "+ str(ctsc0erravg)+'\n')
+fout.write("No Solution Count "+ str(no_sol_count)+' '+str(float(no_sol_count/numrepeats*100)))
 
 if numrepeats > 1:
 
 #  plot all simulations
 
-## optimize the x and y axis for your plots.
-
     plt.figure()
-    plt.hist(c0errconc,color='g',range=(min(c0errconc),max(c0errconc)),bins=20)
+    plt.hist(c0errcts,color='g',range=(min(c0errcts),max(c0errcts)),bins=20)
 
     plt.ylabel('Number of Times')
     plt.xlabel('Percent Error')
-    plt.title('Conc')
-    plt.savefig(fname+'_conc_hist.png')
+    plt.title('Counts')
+    plt.savefig(path+fname+'_cts_hist.png')
     
     plt.figure()
     plt.hist(c0errloc,color='g',range=(min(c0errloc),max(c0errloc)),bins=20)
 
     plt.ylabel('Number of Times')
-    plt.xlabel('Percent Error')
+    plt.xlabel('Error')
     plt.title('Location')
-    plt.savefig(fname+'_loc_hist.png')
+    plt.savefig(path+fname+'_loc_hist.png')
 
  
 #  zoom in   
     plt.figure()
     plt.ylim(0,200)
     plt.xlim(-200,200)
-    plt.hist(c0errconc,color='r',range=(min(c0errconc),max(c0errconc)),bins=20)
+    plt.hist(c0errcts,color='r',range=(min(c0errcts),max(c0errcts)),bins=20)
     
     plt.ylabel('Number of Times')
     plt.xlabel('Percent Error')
-    plt.title('Conc')
-    plt.savefig(fname+'_conc_hist_zoom.png')
+    plt.title('Counts')
+    plt.savefig(path+fname+'_cts_hist_zoom.png')
     
     plt.figure()
     plt.ylim(0,200)
-    plt.xlim(-200,200)
     plt.hist(c0errloc,color='r',range=(min(c0errloc),max(c0errloc)),bins=20)
     
     plt.ylabel('Number of Times')
-    plt.xlabel('Percent Error')
+    plt.xlabel('Error')
     plt.title('Location')
-    plt.savefig(fname+'_loc_hist_zoom.png')
+    plt.savefig(path+fname+'_loc_hist_zoom.png')
 
    
 fout.close()
 plt.show()
+# To close all plots use: close("all") in command line.
