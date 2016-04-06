@@ -280,3 +280,263 @@ if numrepeats > 1:
 fout.close()
 plt.show()
 # To close all plots use: close("all") in command line.
+
+
+
+
+#UTILITIES
+#These would normally be in another file called 'utilities' but we couldn't submit 2 files
+
+def get_line(start, end):
+
+#   Calculates the line of sight from the estimated source to the sensor.
+#   Provided by our mentor based on: http://www.roguebasin.com/index.php?title=Bresenham%27s_Line_Algorithm
+
+    """Bresenham's Line Algorithm
+    Produces a list of tuples from start and end
+ 
+    >>> points1 = get_line((0, 0), (3, 4))
+    >>> points2 = get_line((3, 4), (0, 0))
+    >>> assert(set(points1) == set(points2))
+    >>> print points1
+    [(0, 0), (1, 1), (1, 2), (2, 3), (3, 4)]
+    >>> print points2
+    [(3, 4), (2, 3), (1, 2), (1, 1), (0, 0)]
+    """
+    # Setup initial conditions
+    x1, y1 = start
+    x2, y2 = end
+    dx = x2 - x1
+    dy = y2 - y1
+ 
+    # Determine how steep the line is
+    is_steep = abs(dy) > abs(dx)
+ 
+    # Rotate line
+    if is_steep:
+        x1, y1 = y1, x1
+        x2, y2 = y2, x2
+ 
+    # Swap start and end points if necessary and store swap state
+    swapped = False
+    if x1 > x2:
+        x1, x2 = x2, x1
+        y1, y2 = y2, y1
+        swapped = True
+ 
+    # Recalculate differentials
+    dx = x2 - x1
+    dy = y2 - y1
+ 
+    # Calculate error
+    error = int(dx / 2.0)
+    ystep = 1 if y1 < y2 else -1
+ 
+    # Iterate over bounding box generating points between start and end
+    y = y1
+    points = []
+    for x in range(x1, x2 + 1):
+        coord = (y, x) if is_steep else (x, y)
+        points.append(coord)
+        error -= abs(dy)
+        if error < 0:
+            y += ystep
+            error += dx
+ 
+    # Reverse the list if the coordinates were swapped
+    if swapped:
+        points.reverse()
+    return points
+    
+def find_max_cts(sens_cts,sensor_locx,sensor_locy):
+
+# Describe.....
+# Algorithm developed and programmed by Ethan Fisk.
+
+  import numpy as np 
+
+  indices = np.argsort(sens_cts)
+  sens_cts_new = sens_cts[indices]
+  sens_locx_new = sensor_locx[indices]
+  sens_locy_new = sensor_locy[indices]
+  return sens_cts_new[-4:], sens_locx_new[-4:], sens_locy_new[-4:]
+  
+def sens_loc_corner(min_loc,max_loc,num, sensor_locx,sensor_locy):
+
+#   Module to define locations of ground sensors.
+#   Algorithm developed and programmed by Jonathan Triplett.
+    
+    if num >= 1:
+        sensor_locx[0]=min_loc
+        sensor_locy[0]=max_loc
+    if num >= 2:
+        sensor_locx[1]=max_loc
+        sensor_locy[1]=min_loc
+    if num >= 3:
+        sensor_locx[2]=round(max_loc/2.0)+1
+        sensor_locy[2]=round(max_loc/2.0)+1
+    if num >= 4:
+        sensor_locx[3]=min_loc 
+        sensor_locy[3]=min_loc 
+    if num >= 5:
+        sensor_locx[4]=max_loc 
+        sensor_locy[4]=max_loc  
+    if num == 0:
+        print 'Sorry, You cannot solve with Zero sensors!'
+    if num < 0:
+        print 'Sorry, You cannot have Negative sensors!'
+        
+    return sensor_locx, sensor_locy
+    
+
+
+def bus(min_loc,max_loc,num1,num2,roadgrid,sensor_locx,sensor_locy):
+
+#   Module to define bus locations.
+#   Algorithm developed and programmed by Ethan Fisk.
+
+    import numpy as np    
+    for isens in range(num1,num2):
+        valid=False
+        count = 0
+        while (valid == False and count < 50):
+#       To make sure it doesn't get into an infinite loop
+           count = count + 1
+           x=(np.random.randint(min_loc+1,max_loc-1))
+           y=(np.random.randint(min_loc+1,max_loc-1))
+
+           if roadgrid[y,x] == 1 and x != min_loc and y != min_loc and x != max_loc and y != max_loc:
+              sensor_locx[isens]=x
+              sensor_locy[isens]=y
+              
+              valid=True
+
+    return sensor_locx,sensor_locy
+  
+
+def sens_loc_drones(min_loc,max_loc,num1,num2,sensor_locx,sensor_locy):
+
+#   Module to define locations of drones.  
+#   Algorithm developed and programmed by Nate Golden.
+
+    import numpy as np  
+    for isens in range(num1,num2):
+   
+        sensor_locx[isens]= np.random.randint(min_loc+1,max_loc-1)
+        sensor_locy[isens]= np.random.randint(min_loc+1,max_loc-1)
+    
+    return sensor_locx,sensor_locy   
+  
+def defcts(mincts,maxcts,minloc,maxloc,numsens,sensor_locx,sensor_locy,sigma_error):
+
+#   Module to define source location, source counts, sensor counts, + uncertainty
+#   Algorithm developed and programmed by ??.
+
+    import numpy as np 
+    debug = False
+    
+    if debug:
+        source_cts = 100
+        source_locx = 10
+        source_locy = 10
+    else:
+        source_cts = np.random.randint(mincts,maxcts)
+        source_locx=float(np.random.randint(minloc+2,maxloc-2))
+        source_locy=float(np.random.randint(minloc+2,maxloc-2))
+    
+    sensor_cts = source_cts/((source_locx-sensor_locx)**2+(source_locy-sensor_locy)**2)
+    
+    if (sigma_error != 0):
+        error=np.random.normal(0,sigma_error/100.0,numsens)
+    else:
+        error = np.zeros(numsens)
+        
+    sensor_cts = sensor_cts*(1.0-error)
+    
+    return source_cts,source_locx, source_locy, sensor_cts
+
+def find_solution(fout,x0,y0,c0,mincts,maxcts,mingrid,maxgrid,sens_cts,sensor_locx,sensor_locy,no_sol_count):
+
+#   Describe....
+#   Algorithm developed by mentor and programmed by Jonathan Triplett.
+
+    source_str = 'Source X Location:'+str(x0)+' Y Location: '+str(y0)+' Counts: '+str(c0)+'\n'
+    sens_x_str = 'Sensor  X Locations '+str(sensor_locx)+'\n'
+    sens_y_str = 'Sensor Y Locations '+str(sensor_locy)+'\n'
+    sens_cts_str = 'Sensor Counts '+str(sens_cts)+'\n'
+    stars = '****************************************************\n'
+
+    A= sens_cts[0]-sens_cts[1]
+    B= -2*sensor_locx[0]*sens_cts[0]+2*sensor_locx[1]*sens_cts[1]
+    C= -2*sensor_locy[0]*sens_cts[0]+2*sensor_locy[1]*sens_cts[1]
+    D= sens_cts[0]*(sensor_locx[0]**2+sensor_locy[0]**2)-sens_cts[1]*(sensor_locx[1]**2+sensor_locy[1]**2)
+
+    E= sens_cts[2]-sens_cts[3]
+    F= -2*sensor_locx[2]*sens_cts[2]+2*sensor_locx[3]*sens_cts[3]
+    G= -2*sensor_locy[2]*sens_cts[2]+2*sensor_locy[3]*sens_cts[3]
+    H= sens_cts[2]*(sensor_locx[2]**2+sensor_locy[2]**2)-sens_cts[3]*(sensor_locx[3]**2+sensor_locy[3]**2)
+
+    I= sens_cts[1]-sens_cts[3]
+    J= -2*sensor_locx[1]*sens_cts[1]+2*sensor_locx[3]*sens_cts[3]
+    K= -2*sensor_locy[1]*sens_cts[1]+2*sensor_locy[3]*sens_cts[3]
+    L= sens_cts[1]*(sensor_locx[1]**2+sensor_locy[1]**2)-sens_cts[3]*(sensor_locx[3]**2+sensor_locy[3]**2)
+
+    M = B*I-A*J
+    N = B*E-A*F
+
+    num = N*A*L-N*I*D-M*A*H+M*D*E
+    den = -C*E*M+A*G*M+N*I*C-N*A*K
+    if (den != 0 and (B*E-A*F) !=0 ):
+        y0c = (num)/(den)
+        x0c = (A*H-D*E-(C*E-A*G)*y0c)/(B*E-A*F)
+        c0c = sens_cts[0]*((sensor_locx[0]-x0c)**2 + (sensor_locy[0]-y0)**2)
+        flag = True
+    else:
+        fout.write('no soln \n')
+        fout.write(source_str)
+        fout.write(sens_x_str)
+        fout.write(sens_y_str)
+        fout.write(sens_cts_str)
+        fout.write(stars)
+        c0c = float('nan')
+        x0c = float('nan')
+        y0c = float('nan')
+        flag = False
+        no_sol_count = no_sol_count + 1
+    if x0c < mingrid or x0c > maxgrid:
+        fout.write('no soln not in x grid \n')
+        fout.write(source_str)
+        fout.write(sens_x_str)
+        fout.write(sens_y_str)
+        fout.write(sens_cts_str)
+        fout.write(stars)
+        c0c = float('nan')
+        x0c = float('nan')
+        y0c = float('nan')
+        flag = False
+        no_sol_count = no_sol_count + 1
+    if y0c < mingrid or y0c > maxgrid:
+        fout.write('no soln not in y grid \n')
+        fout.write(source_str)
+        fout.write(sens_x_str)
+        fout.write(sens_y_str)
+        fout.write(sens_cts_str)
+        fout.write(stars)
+        c0c = float('nan')
+        x0c = float('nan')
+        y0c = float('nan')
+        flag = False
+        no_sol_count = no_sol_count + 1
+    if c0c < mincts or y0c > maxcts:
+        fout.write('no soln cts less than 0 \n')
+        fout.write(source_str)
+        fout.write(sens_x_str)
+        fout.write(sens_y_str)
+        fout.write(sens_cts_str)
+        fout.write(stars)
+        c0c = float('nan')
+        x0c = float('nan')
+        y0c = float('nan')
+        flag = False
+        no_sol_count = no_sol_count + 1
+    return c0c,x0c,y0c,flag,no_sol_count
